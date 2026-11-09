@@ -1,0 +1,202 @@
+.page {
+  padding: var(--space-6);
+  overflow-y: auto;
+  height: 100%;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 200px;
+  color: var(--color-text-muted);
+}
+
+/* ── Banners ───────────────────────────────────────────────────── */
+.errorBanner {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+}
+
+.successBanner {
+  background: var(--color-success-light);
+  color: var(--color-success);
+  border-radius: var(--radius-lg);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  font-weight: 600;
+}
+
+/* ── Current open day card ─────────────────────────────────────── */
+.currentDay {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.currentDayInfo {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.calIcon { color: var(--color-primary); flex-shrink: 0; }
+
+.currentDayLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.currentDayDate {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+.noOpenDay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  color: var(--color-text-muted);
+}
+
+/* ── Report panel ─────────────────────────────────────────────── */
+.reportPanel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.reportMeta {
+  display: flex;
+  gap: var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  align-items: center;
+}
+.reportMeta span {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+.stat {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.statAccent {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.statLabel {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: 2px;
+}
+
+.statValue {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.statAccent .statValue { color: var(--color-primary); }
+
+/* ── By type breakdown ─────────────────────────────────────────── */
+.byType {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+
+.byTypeTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-2);
+}
+
+.byTypeRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+  padding: 2px 0;
+}
+
+/* ── History ─────────────────────────────────────────────────── */
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.historyTitle {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-1);
+}
+
+.histRow {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.histRowHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  user-select: none;
+  gap: var(--space-3);
+}
+.histRowHeader:hover { background: var(--color-border); }
+
+.histDate { font-weight: 700; font-size: var(--font-size-sm); }
+
+.histMeta {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.histDetail {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-4);
+  background: var(--color-bg);
+}

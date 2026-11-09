@@ -1,0 +1,316 @@
+/* ── Page layout ────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+}
+
+/* ── Category tabs ───────────────────────────────────────────────── */
+.tabsRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+  flex-wrap: wrap;
+}
+
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.tab {
+  height: var(--btn-height-sm);
+  padding: 0 var(--space-5);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-border);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-family);
+}
+
+.tab:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.tabActive {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.catActions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+/* ── Product grid ────────────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-3);
+  padding: var(--space-4);
+  overflow-y: auto;
+  flex: 1;
+  align-content: start;
+}
+
+.empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-lg);
+}
+
+/* ── Product card – compact square ──────────────────────────────── */
+.card {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: default;
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.cardSuspended {
+  opacity: 0.5;
+}
+
+.cardImg {
+  position: relative;
+  /* square aspect via padding trick */
+  aspect-ratio: 1 / 1;
+  background: var(--color-surface);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.cardImg img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.noImg {
+  opacity: 0.3;
+  color: var(--color-text-muted);
+}
+
+.suspendedBadge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: var(--color-danger);
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: var(--radius-full);
+  font-weight: 700;
+  line-height: 1.6;
+}
+
+.cardBody {
+  padding: var(--space-2) var(--space-2);
+  flex: 1;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardPrice {
+  font-size: var(--font-size-sm);
+  color: var(--color-primary);
+  font-weight: 700;
+  margin: 0;
+}
+
+.cardActions {
+  display: flex;
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-1);
+  gap: 0;
+  justify-content: space-around;
+}
+
+.iconBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.iconBtn:hover { background: var(--color-surface); color: var(--color-text); }
+.iconBtnDanger { color: var(--color-danger); }
+.iconBtnDanger:hover { background: var(--color-danger-light); color: var(--color-danger); }
+
+/* ── Modals ──────────────────────────────────────────────────────── */
+.modalForm {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.modalActions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+}
+
+.submitError {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+/* Image picker */
+.imagePicker {
+  height: 140px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: border-color var(--transition-fast);
+}
+
+.imagePicker:hover {
+  border-color: var(--color-primary);
+}
+
+.imagePreview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.imagePlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.numInput {
+  cursor: pointer;
+  caret-color: transparent;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  text-align: center;
+}
+
+.numpadWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* ── Options modal ───────────────────────────────────────────────── */
+.optionsWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.optSection {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  margin-bottom: var(--space-2);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.optList {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.optItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+}
+
+.optLabel { flex: 1; font-weight: 600; }
+.optPrice { color: var(--color-primary); font-weight: 700; min-width: 60px; }
+.optEditInput { flex: 1; }
+.optEditPrice { width: 80px; }
+.noOpts { color: var(--color-text-muted); font-size: var(--font-size-sm); }
+
+.addOptForm {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-4);
+}
+
+.addOptRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.addOptType { width: 100px; }
+.addOptLabel { flex: 1; }
+.addOptPrice { width: 80px; }

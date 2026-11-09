@@ -1,0 +1,61 @@
+name: Build Windows Installer
+
+on:
+  # Run manually from the Actions tab
+  workflow_dispatch:
+  # Run automatically on version tags  →  git tag v1.0.0 && git push origin v1.0.0
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write   # needed by action-gh-release to create a Release
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      # ── 1. Checkout ───────────────────────────────────────────────
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # ── 2. Node 22 + npm cache ────────────────────────────────────
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # ── 3. Install dependencies ───────────────────────────────────
+      # npm ci uses package-lock.json for a reproducible install.
+      # better-sqlite3 ships prebuilt win32-x64 binaries so no
+      # native compilation is needed (npmRebuild: false in package.json).
+      - name: Install dependencies
+        run: npm ci
+
+      # ── 4. Build Vite bundle + NSIS installer ─────────────────────
+      - name: Build
+        run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ── 5. Upload installer as a workflow artifact ─────────────────
+      # Always available for download from the Actions run page,
+      # regardless of whether a Release was created.
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: release/*.exe
+          if-no-files-found: error
+          retention-days: 30
+
+      # ── 6. Create GitHub Release on tag pushes ────────────────────
+      # Only runs when the workflow was triggered by a v* tag push.
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/*.exe
+          generate_release_notes: true

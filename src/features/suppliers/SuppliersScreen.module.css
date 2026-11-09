@@ -1,0 +1,200 @@
+.page {
+  display: flex;
+  height: 100%;
+  overflow: hidden;
+}
+
+.loading {
+  display: flex; align-items: center; justify-content: center;
+  height: 100%; color: var(--color-text-muted);
+}
+
+/* ── Sidebar ──────────────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-left: 1px solid var(--color-border);
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+}
+
+.sidebarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.sidebarTitle { font-size: var(--font-size-base); font-weight: 700; }
+
+.shopItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  border-radius: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  text-align: right;
+  width: 100%;
+  border-bottom: 1px solid var(--color-border);
+  transition: background var(--transition-fast);
+}
+.shopItem:hover { background: var(--color-border); }
+.shopActive { background: var(--color-primary-light); color: var(--color-primary); font-weight: 700; }
+
+.shopThumb {
+  width: 28px; height: 28px;
+  border-radius: var(--radius-sm);
+  object-fit: cover; flex-shrink: 0;
+}
+.shopName { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.shopActions { display: flex; gap: 2px; opacity: 0; transition: opacity var(--transition-fast); }
+.shopItem:hover .shopActions { opacity: 1; }
+
+/* ── Main ─────────────────────────────────────────────────────────── */
+.main { flex: 1; overflow-y: auto; }
+
+.empty {
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  height: 100%; gap: var(--space-3);
+  color: var(--color-text-muted);
+}
+.emptyIcon { opacity: 0.2; }
+
+/* ── Common buttons ───────────────────────────────────────────────── */
+.iconBtn {
+  width: 30px; height: 30px;
+  border-radius: var(--radius-sm);
+  border: none; background: transparent;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted);
+  transition: background var(--transition-fast);
+}
+.iconBtn:hover { background: var(--color-border); color: var(--color-text); }
+.danger { color: var(--color-danger); }
+.danger:hover { background: var(--color-danger-light); color: var(--color-danger); }
+
+/* ── Shop panel ───────────────────────────────────────────────────── */
+.shopPanel { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-4); }
+.shopPanelTitle { font-size: var(--font-size-xl); font-weight: 700; }
+
+.tabs { display: flex; gap: 0; border-bottom: 2px solid var(--color-border); }
+.tab {
+  padding: var(--space-2) var(--space-5);
+  border: none; border-bottom: 2px solid transparent; margin-bottom: -2px;
+  background: transparent; font-family: var(--font-family);
+  font-size: var(--font-size-sm); font-weight: 600;
+  color: var(--color-text-muted); cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.tab:hover { color: var(--color-text); }
+.tabActive { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+.panelToolbar { display: flex; gap: var(--space-2); margin-bottom: var(--space-3); }
+
+/* ── Supplies ─────────────────────────────────────────────────────── */
+.supplyList { display: flex; flex-direction: column; gap: var(--space-1); }
+.supplyRow {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.supplyRowName { flex: 1; font-size: var(--font-size-sm); font-weight: 600; }
+.supplyRowPrice { font-size: var(--font-size-sm); color: var(--color-primary); font-weight: 700; }
+.emptyText { color: var(--color-text-muted); font-size: var(--font-size-sm); padding: var(--space-4) 0; text-align: center; }
+
+/* ── Purchases ────────────────────────────────────────────────────── */
+.purchaseList { display: flex; flex-direction: column; gap: var(--space-3); }
+.purchaseCard {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface);
+}
+.purchaseCardHead {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+}
+.purchaseDate { font-weight: 700; font-size: var(--font-size-sm); }
+.purchaseTotal { font-weight: 700; color: var(--color-primary); }
+.purchaseCardFoot {
+  display: flex; gap: var(--space-3); align-items: center;
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--font-size-xs); color: var(--color-text-muted);
+}
+.purchasePaid { color: var(--color-success); }
+.purchaseDebt { color: var(--color-danger); font-weight: 700; }
+.purchaseClear { color: var(--color-success); }
+.purchaseItem {
+  display: flex; gap: var(--space-3); align-items: center;
+  padding: var(--space-1) var(--space-4);
+  font-size: var(--font-size-xs); border-top: 1px dashed var(--color-border);
+  color: var(--color-text-muted);
+}
+.purchaseItem span:nth-child(2) { flex: 1; }
+
+/* ── Debt panel ───────────────────────────────────────────────────── */
+.debtPanel { padding: var(--space-5); display: flex; flex-direction: column; gap: var(--space-3); max-width: 480px; }
+.debtTotal {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: var(--font-size-lg); font-weight: 700;
+  background: var(--color-primary-light); border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+}
+.debtTotalAmt { color: var(--color-primary); font-size: var(--font-size-xl); }
+.debtRow {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); font-size: var(--font-size-sm);
+}
+.debtAmt { font-weight: 700; color: var(--color-danger); }
+
+/* ── Forms ────────────────────────────────────────────────────────── */
+.shopForm { display: flex; flex-direction: column; gap: var(--space-4); }
+.purchaseForm { display: flex; flex-direction: column; gap: var(--space-3); }
+.input {
+  height: var(--btn-height-sm); width: 100%;
+  padding: 0 var(--space-3); border-radius: var(--radius-md);
+  border: 1px solid var(--color-border); background: var(--color-bg);
+  color: var(--color-text); font-family: var(--font-family);
+  font-size: var(--font-size-base);
+}
+.input:focus { outline: none; border-color: var(--color-primary); }
+.imageRow { display: flex; align-items: center; gap: var(--space-3); }
+.imagePreview { width: 48px; height: 48px; border-radius: var(--radius-sm); object-fit: cover; }
+.error { color: var(--color-danger); font-size: var(--font-size-sm); margin: 0; }
+
+.pItemsHeader {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: var(--font-size-sm); font-weight: 700;
+  border-bottom: 1px solid var(--color-border); padding-bottom: var(--space-2);
+}
+.pItemRow { display: flex; align-items: center; gap: var(--space-2); }
+.pItemSelect {
+  height: var(--btn-height-sm); flex: 1; padding: 0 var(--space-2);
+  border-radius: var(--radius-sm); border: 1px solid var(--color-border);
+  background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-family); font-size: var(--font-size-sm); cursor: pointer;
+}
+.pItemInput {
+  height: var(--btn-height-sm); flex: 1; padding: 0 var(--space-2);
+  border-radius: var(--radius-sm); border: 1px solid var(--color-border);
+  background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-family); font-size: var(--font-size-sm);
+}
+.pItemInput:focus, .pItemSelect:focus { outline: none; border-color: var(--color-primary); }
+.paidInfo { font-size: var(--font-size-sm); color: var(--color-text-muted); margin: 0; }

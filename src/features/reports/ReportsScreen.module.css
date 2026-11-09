@@ -1,0 +1,219 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* ── Toolbar ──────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Period tabs ──────────────────────────────────────────────── */
+
+.periodTabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.periodTab {
+  padding: 8px 18px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-family: inherit;
+  cursor: pointer;
+  min-height: 40px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.periodTab:hover {
+  background: var(--bg-hover);
+}
+
+.periodTabActive {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+/* ── Custom date range ────────────────────────────────────────── */
+
+.customRange {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.dateInput {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 0.9rem;
+  min-height: 40px;
+}
+
+/* ── Action buttons ───────────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ── Loading ──────────────────────────────────────────────────── */
+
+.loadingMsg {
+  padding: 24px;
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+/* ── Content area ─────────────────────────────────────────────── */
+
+.content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.periodLabel {
+  margin: 0 0 12px 0;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
+
+/* ── Summary cards ────────────────────────────────────────────── */
+
+.cards {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.card {
+  flex: 1;
+  min-width: 160px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cardHighlight {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.cardHighlight .cardLabel,
+.cardHighlight .cardValue {
+  color: #fff;
+}
+
+.cardLabel {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.cardValue {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* ── Section title ────────────────────────────────────────────── */
+
+.sectionTitle {
+  margin: 16px 0 6px 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-right: 3px solid var(--accent);
+  padding-right: 8px;
+}
+
+/* ── Table ────────────────────────────────────────────────────── */
+
+.tableWrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.table th {
+  background: var(--bg-secondary);
+  padding: 10px 14px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+}
+
+.table td {
+  padding: 9px 14px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-hover);
+}
+
+.numeric {
+  text-align: left !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.noData {
+  text-align: center !important;
+  color: var(--text-secondary);
+  padding: 20px !important;
+}
+
+.footerRow td {
+  font-weight: 700;
+  background: var(--bg-secondary);
+  border-top: 2px solid var(--border);
+}

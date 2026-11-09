@@ -1,0 +1,103 @@
+.page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-surface);
+  padding: var(--space-6);
+}
+
+.card {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-8);
+  width: 100%;
+  max-width: 480px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.logoWrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.logo {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border-radius: var(--radius-full);
+  border: 3px solid var(--color-primary);
+}
+
+.appName {
+  font-size: var(--font-size-xl);
+  color: var(--color-primary);
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  text-align: center;
+  font-weight: 700;
+}
+
+.subtitle {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: 0;
+}
+
+.steps {
+  display: flex;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+  transition: background var(--transition-base);
+}
+
+.dotActive {
+  background: var(--color-primary);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.numInput {
+  cursor: pointer;
+  caret-color: transparent;
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  text-align: center;
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: space-between;
+}
+
+.row > * {
+  flex: 1;
+}
+
+.submitError {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  margin-bottom: 0;
+}

@@ -1,0 +1,101 @@
+.page {
+  display: flex; flex-direction: column;
+  height: 100%; overflow: hidden;
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface); flex-shrink: 0;
+}
+.title { font-size: var(--font-size-xl); font-weight: 700; }
+
+.filters {
+  display: flex; gap: var(--space-3); align-items: center;
+  padding: var(--space-3) var(--space-6);
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.filterSelect, .filterInput {
+  height: 38px; padding: 0 var(--space-3);
+  border-radius: var(--radius-md); border: 1px solid var(--color-border);
+  background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-family); font-size: var(--font-size-sm); cursor: pointer;
+}
+.filterSelect:focus, .filterInput:focus { outline: none; border-color: var(--color-primary); }
+
+.totalBar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: var(--space-2) var(--space-6);
+  background: var(--color-danger-light);
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--font-size-sm); font-weight: 600;
+  color: var(--color-danger); flex-shrink: 0;
+}
+.totalAmt { font-size: var(--font-size-lg); }
+
+.loading { flex: 1; display: flex; align-items: center; justify-content: center; color: var(--color-text-muted); }
+.empty {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: var(--space-3);
+  color: var(--color-text-muted);
+}
+.emptyIcon { opacity: 0.2; }
+
+.list { flex: 1; overflow-y: auto; padding: var(--space-3) var(--space-6); display: flex; flex-direction: column; gap: var(--space-2); }
+
+.row {
+  display: flex; align-items: center; justify-content: space-between;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: var(--radius-md); padding: var(--space-3) var(--space-4);
+  gap: var(--space-3);
+}
+.rowLeft { display: flex; align-items: center; gap: var(--space-3); flex: 1; min-width: 0; }
+.rowRight { display: flex; align-items: center; gap: var(--space-2); flex-shrink: 0; }
+
+.catBadge {
+  font-size: var(--font-size-xs); font-weight: 700;
+  padding: 2px 8px; border-radius: var(--radius-full);
+  background: var(--color-info-light); color: var(--color-info);
+  white-space: nowrap;
+}
+.cat_electricity { background: #fff3cd; color: #856404; }
+.cat_rent        { background: var(--color-info-light); color: var(--color-info); }
+.cat_salary      { background: var(--color-success-light); color: var(--color-success); }
+.cat_maintenance { background: var(--color-warning-light); color: #856404; }
+.cat_other       { background: var(--color-surface); color: var(--color-text-muted); border: 1px solid var(--color-border); }
+
+.rowName { font-size: var(--font-size-sm); font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rowDate { font-size: var(--font-size-xs); color: var(--color-text-muted); white-space: nowrap; }
+.rowAmount { font-weight: 700; color: var(--color-danger); font-size: var(--font-size-sm); white-space: nowrap; }
+
+.iconBtn {
+  width: 30px; height: 30px; border-radius: var(--radius-sm); border: none;
+  background: transparent; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--color-text-muted); transition: background var(--transition-fast);
+}
+.iconBtn:hover { background: var(--color-border); color: var(--color-text); }
+.danger { color: var(--color-danger); }
+.danger:hover { background: var(--color-danger-light); }
+
+/* Form */
+.form { display: flex; flex-direction: column; gap: var(--space-4); }
+.input {
+  height: var(--btn-height-sm); width: 100%; padding: 0 var(--space-3);
+  border-radius: var(--radius-md); border: 1px solid var(--color-border);
+  background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-family); font-size: var(--font-size-base);
+}
+.input:focus { outline: none; border-color: var(--color-primary); }
+.select {
+  height: var(--btn-height-sm); width: 100%; padding: 0 var(--space-3);
+  border-radius: var(--radius-md); border: 1px solid var(--color-border);
+  background: var(--color-bg); color: var(--color-text);
+  font-family: var(--font-family); font-size: var(--font-size-base); cursor: pointer;
+}
+.select:focus { outline: none; border-color: var(--color-primary); }
+.error { color: var(--color-danger); font-size: var(--font-size-sm); margin: 0; }

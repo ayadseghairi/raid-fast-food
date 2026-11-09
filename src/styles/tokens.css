@@ -1,0 +1,123 @@
+/* ============================================================
+   CSS Design Tokens (custom properties)
+   All theming values live here. Components reference variables only.
+   Light/dark adapts to prefers-color-scheme.
+   ============================================================ */
+
+:root {
+  /* ── Colour palette – light mode ────────────────────── */
+  --color-bg: #ffffff;
+  --color-surface: #f7f8fa;
+  --color-surface-raised: #ffffff;
+  --color-border: #e5e7eb;
+  --color-border-strong: #d1d5db;
+
+  --color-text: #1f2328;
+  --color-text-muted: #57606a;
+  --color-text-inverse: #ffffff;
+
+  --color-primary: #d97706;       /* warm amber – fast food feel */
+  --color-primary-hover: #b45309;
+  --color-primary-active: #92400e;
+  --color-primary-light: #fef3c7;
+
+  --color-secondary: #3b82f6;
+  --color-secondary-hover: #2563eb;
+
+  --color-success: #16a34a;
+  --color-success-light: #dcfce7;
+  --color-danger: #dc2626;
+  --color-danger-hover: #b91c1c;
+  --color-danger-light: #fee2e2;
+  --color-warning: #d97706;
+  --color-warning-light: #fef9c3;
+  --color-info: #0ea5e9;
+  --color-info-light: #e0f2fe;
+
+  /* ── Shadows ─────────────────────────────────────────── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ── Spacing scale ───────────────────────────────────── */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* ── Typography ──────────────────────────────────────── */
+  --font-family: 'Tajawal', -apple-system, 'Segoe UI', system-ui, sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-base: 15px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 22px;
+  --font-size-2xl: 28px;
+  --font-size-3xl: 36px;
+  --line-height: 1.6;
+
+  /* ── Radii ───────────────────────────────────────────── */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 9999px;
+
+  /* ── Touch targets ───────────────────────────────────── */
+  --touch-target: 56px;   /* minimum tappable area */
+  --btn-height: 56px;
+  --btn-height-sm: 40px;
+  --btn-height-lg: 64px;
+
+  /* ── Layout ──────────────────────────────────────────── */
+  --sidebar-width: 240px;
+  --header-height: 64px;
+
+  /* ── Transitions ─────────────────────────────────────── */
+  --transition-fast: 120ms ease;
+  --transition-base: 200ms ease;
+}
+
+/* ── Dark mode overrides ─────────────────────────────────── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-bg: #0d1117;
+    --color-surface: #161b22;
+    --color-surface-raised: #21262d;
+    --color-border: #30363d;
+    --color-border-strong: #484f58;
+
+    --color-text: #e6edf3;
+    --color-text-muted: #8b949e;
+    --color-text-inverse: #0d1117;
+
+    --color-primary: #f59e0b;
+    --color-primary-hover: #fbbf24;
+    --color-primary-active: #fcd34d;
+    --color-primary-light: #292115;
+
+    --color-secondary: #58a6ff;
+    --color-secondary-hover: #79b8ff;
+
+    --color-success: #3fb950;
+    --color-success-light: #0d2318;
+    --color-danger: #f85149;
+    --color-danger-hover: #ff7b72;
+    --color-danger-light: #2d1117;
+    --color-warning: #d29922;
+    --color-warning-light: #272115;
+    --color-info: #39c5cf;
+    --color-info-light: #0d2028;
+
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.3);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.3);
+  }
+}

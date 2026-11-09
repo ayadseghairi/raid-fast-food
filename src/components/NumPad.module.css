@@ -1,0 +1,51 @@
+.pad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-2);
+  padding: var(--space-2);
+}
+
+.key {
+  height: var(--btn-height-lg);
+  font-size: var(--font-size-xl);
+  font-weight: 600;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+  font-family: var(--font-family);
+}
+
+.key:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.key:active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.clear {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.clear:hover {
+  background: var(--color-danger);
+  color: var(--color-text-inverse);
+}
+
+.backspace {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.backspace:hover {
+  background: var(--color-warning);
+  color: var(--color-text-inverse);
+}
