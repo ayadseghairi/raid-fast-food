@@ -9,7 +9,6 @@ const { AppError } = require('../utils/errors.js');
 const orderSvc = require('../services/orders.js');
 const custRepo = require('../repositories/customers.js');
 const dayRepo = require('../repositories/businessDays.js');
-const { toMinor } = require('../utils/money.js');
 
 // ── Input helpers ──────────────────────────────────────────────────
 
@@ -52,12 +51,14 @@ handle('orders:create', (payload) => {
     delivery_name, delivery_phone, delivery_addr } = payload;
 
   const normalizedItems = validateItems(items);
-  const fee = Number.isInteger(Number(delivery_fee)) ? Math.floor(Number(delivery_fee)) : 0;
+  // delivery_fee arrives as integer minor units from the renderer (renderer
+  // already called toMinor). Clamp to a non-negative integer; never re-convert.
+  const fee = Number.isInteger(Number(delivery_fee)) ? Math.max(0, Math.floor(Number(delivery_fee))) : 0;
 
   return orderSvc.createOrder({
     order_type,
     items: normalizedItems,
-    delivery_fee: toMinor(delivery_fee) ?? fee,
+    delivery_fee: fee,
     customer,
     delivery_name,
     delivery_phone,
