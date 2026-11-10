@@ -85,6 +85,7 @@ app.whenReady().then(() => {
   require('./ipc/print.js');
   require('./ipc/reports.js');
   require('./ipc/backup.js');
+  require('./ipc/data.js');
 
   createWindow();
 

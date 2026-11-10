@@ -108,3 +108,9 @@ export const backupRestore = (filePath, ownerPassword) =>
   call('backup:restore', { filePath, ownerPassword });
 export const backupChooseFolder = () => call('backup:chooseFolder', {});
 export const backupList = () => call('backup:list', {});
+
+// ── Danger zone ──────────────────────────────────────────────────
+export const dataClearTransactions = (password) =>
+  call('data:clearTransactions', { password });
+export const dataClearAll = (password) =>
+  call('data:clearAll', { password });

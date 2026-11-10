@@ -74,6 +74,8 @@ const ALLOWED_CHANNELS = [
   'backup:restore',
   'backup:chooseFolder',
   'backup:list',
+  'data:clearTransactions',
+  'data:clearAll',
 ];
 
 contextBridge.exposeInMainWorld('api', {

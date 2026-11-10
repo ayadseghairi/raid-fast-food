@@ -1,15 +1,13 @@
 name: Build Windows Installer
 
 on:
-  # Run manually from the Actions tab
   workflow_dispatch:
-  # Run automatically on version tags  →  git tag v1.0.0 && git push origin v1.0.0
   push:
     tags:
       - 'v*'
 
 permissions:
-  contents: write   # needed by action-gh-release to create a Release
+  contents: write
 
 jobs:
   build-windows:
@@ -20,39 +18,44 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # ── 2. Node 22 + npm cache ────────────────────────────────────
-      - name: Setup Node.js 22
+      # ── 2. Node 20 LTS ────────────────────────────────────────────
+      # Node 22 + npm ci has a known bug with rollup optional platform
+      # binaries (@rollup/rollup-win32-x64-msvc). Node 20 + npm install
+      # (fresh, no lockfile) is the reliable fix.
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
-          cache: 'npm'
+          node-version: '20'
 
-      # ── 3. Install dependencies ───────────────────────────────────
-      # npm ci uses package-lock.json for a reproducible install.
-      # better-sqlite3 ships prebuilt win32-x64 binaries so no
-      # native compilation is needed (npmRebuild: false in package.json).
+      # ── 3. Install dependencies (no npm ci, no lockfile) ──────────
+      # Avoids npm bug: https://github.com/npm/cli/issues/4828
       - name: Install dependencies
-        run: npm ci
+        run: |
+          if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
+          if (Test-Path package-lock.json) { Remove-Item -Force package-lock.json }
+          npm install
+        shell: pwsh
 
-      # ── 4. Build Vite bundle + NSIS installer ─────────────────────
+      # ── 4. Run tests ──────────────────────────────────────────────
+      - name: Run tests
+        run: npm test
+
+      # ── 5. Build Vite bundle + NSIS installer ─────────────────────
       - name: Build
         run: npm run dist:win
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # ── 5. Upload installer as a workflow artifact ─────────────────
-      # Always available for download from the Actions run page,
-      # regardless of whether a Release was created.
+      # ── 6. Upload installer as workflow artifact ───────────────────
       - name: Upload installer artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
+          name: RaidFastFood-Setup-${{ github.ref_name }}
           path: release/*.exe
           if-no-files-found: error
-          retention-days: 30
+          retention-days: 90
 
-      # ── 6. Create GitHub Release on tag pushes ────────────────────
-      # Only runs when the workflow was triggered by a v* tag push.
+      # ── 7. Create GitHub Release on tag pushes ────────────────────
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2

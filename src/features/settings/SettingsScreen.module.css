@@ -197,3 +197,84 @@
   color: var(--color-text-muted);
   direction: ltr;
 }
+
+/* ── Danger zone section ───────────────────────────────────────────── */
+.dangerSection {
+  background: var(--color-danger-light);
+  border: 2px solid var(--color-danger);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.dangerTitle {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  color: var(--color-danger);
+  margin-bottom: var(--space-2);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-danger);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.dangerHint {
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  margin: 0 0 var(--space-4) 0;
+  opacity: 0.8;
+}
+
+.dangerActions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.dangerCard {
+  background: var(--color-bg);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.dangerCardText {
+  flex: 1;
+}
+
+.dangerCardTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 var(--space-1) 0;
+}
+
+.dangerCardDesc {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+/* ── Danger confirm modal ──────────────────────────────────────────── */
+.dangerModal {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-2) 0;
+}
+
+.dangerWarning {
+  background: var(--color-danger-light);
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-size-sm);
+  color: var(--color-danger);
+  font-weight: 600;
+  margin: 0;
+}
