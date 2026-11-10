@@ -92,9 +92,14 @@ export const reportsExportExcel = (params) => call('reports:exportExcel', params
 export const reportsExportPdf = (params) => call('reports:exportPdf', params);
 
 // ── Printing ────────────────────────────────────────────────────
-export const printGetPrinters = () => call('print:getPrinters', {});
-export const printReceipt = (data) => call('print:receipt', data);
-export const printSaveAsPdf = (data) => call('print:saveAsPdf', data);
+export const printGetPrinters  = () => call('print:getPrinters', {});
+export const printReceipt      = (data) => call('print:receipt', data);
+export const printSaveAsPdf    = (data) => call('print:saveAsPdf', data);
+// New printing API
+export const printListPrinters = () => call('print:listPrinters', {});
+export const printPreviewHtml  = (data) => call('print:previewHtml', data);
+export const printRun          = (data) => call('print:run', data);
+export const printSavePdf      = (data) => call('print:savePdf', data);
 
 // ── Backup ──────────────────────────────────────────────────────
 export const backupNow = (ownerPassword, destPath) =>

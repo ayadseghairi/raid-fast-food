@@ -20,9 +20,10 @@
   outline: none;
 }
 
-.sm { width: 380px; }
-.md { width: 520px; }
-.lg { width: 700px; }
+.sm  { width: 380px; }
+.md  { width: 520px; }
+.lg  { width: 700px; }
+.xl  { width: min(960px, 92vw); }
 
 .header {
   display: flex;

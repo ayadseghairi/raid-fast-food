@@ -1,20 +1,195 @@
-.opts {
+/* ── Two-column layout ──────────────────────────────────────────── */
+.layout {
+  display: flex;
+  gap: var(--space-6);
+  min-height: 420px;
+}
+
+/* ── Preview column ─────────────────────────────────────────────── */
+.previewCol {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-2) 0;
+  min-width: 0;
+}
+
+/* Copy tabs above preview */
+.tabs {
+  display: flex;
+  gap: var(--space-2);
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-2);
+}
+.tab {
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.tab:hover { background: var(--color-surface); color: var(--color-text); }
+.tabActive {
+  color: var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
+}
+
+/* Scrollable preview area */
+.previewWrap {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: auto;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  justify-content: center;
+  padding: var(--space-4);
+  min-height: 300px;
+  position: relative;
+}
+
+.previewLoading {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+/* Paper strip container: white, shadow, centred */
+.paperStrip {
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  border-radius: 2px;
+  overflow: hidden;
+  transition: width var(--transition-base);
+}
+
+/* The iframe itself expands to fit content height */
+.previewFrame {
+  display: block;
+  border: none;
+  min-height: 200px;
+  height: auto;
+  /* Let content size determine height */
+  overflow: hidden;
+}
+
+/* ── Controls column ────────────────────────────────────────────── */
+.controlsCol {
+  width: 260px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.printerRow {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.select {
+  flex: 1;
+  height: var(--btn-height-sm);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  padding: 0 var(--space-3);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  cursor: pointer;
+}
+.select:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+.refreshBtn {
+  width: var(--btn-height-sm);
+  height: var(--btn-height-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.refreshBtn:hover { background: var(--color-border); color: var(--color-text); }
+
+.toggleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.toggleRow input { cursor: pointer; }
+
+.radioRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+.radioLabel {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin-top: auto;
 }
 
 .error {
   color: var(--color-danger);
   font-size: var(--font-size-sm);
-  text-align: center;
   margin: 0;
 }
-
+.success {
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  margin: 0;
+  word-break: break-all;
+}
 .hint {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
   text-align: center;
   margin: 0;
+}
+
+/* ── Legacy: keep .opts for any code that still renders old markup ─ */
+.opts {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
 }

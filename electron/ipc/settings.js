@@ -16,6 +16,7 @@ const ALLOWED_KEYS = new Set([
   'printer_name',
   'paper_width',
   'backup_folder',
+  'show_virtual_printers',
 ]);
 
 handle('settings:get', () => {
