@@ -10,8 +10,28 @@ permissions:
   contents: write
 
 jobs:
+  # ── Tests run on Linux (fast, no native rebuild needed) ──────────────
+  test:
+    name: Run tests (Linux)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: npm test
+
+  # ── Windows installer build ───────────────────────────────────────────
   build-windows:
+    name: Build Windows installer
     runs-on: windows-latest
+    needs: test
 
     steps:
       # ── 1. Checkout ───────────────────────────────────────────────
@@ -19,16 +39,14 @@ jobs:
         uses: actions/checkout@v4
 
       # ── 2. Node 20 LTS ────────────────────────────────────────────
-      # Node 22 + npm ci has a known bug with rollup optional platform
-      # binaries (@rollup/rollup-win32-x64-msvc). Node 20 + npm install
-      # (fresh, no lockfile) is the reliable fix.
       - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
       # ── 3. Install dependencies (no npm ci, no lockfile) ──────────
-      # Avoids npm bug: https://github.com/npm/cli/issues/4828
+      # Fixes npm bug: https://github.com/npm/cli/issues/4828
+      # rollup optional platform binaries fail with npm ci on Windows.
       - name: Install dependencies
         run: |
           if (Test-Path node_modules) { Remove-Item -Recurse -Force node_modules }
@@ -36,9 +54,14 @@ jobs:
           npm install
         shell: pwsh
 
-      # ── 4. Run tests ──────────────────────────────────────────────
-      - name: Run tests
-        run: npm test
+      # ── 4. Rebuild better-sqlite3 for Electron ────────────────────
+      # The prebuilt binary in node_modules is for Node.js; Electron
+      # uses a different ABI. electron-builder handles this via
+      # npmRebuild:false + asarUnpack, but we need the Node-native
+      # binary for the test run. Skip rebuild here — tests run in job 1.
+      - name: Rebuild native modules for Electron
+        run: npx electron-rebuild -f -w better-sqlite3
+        shell: pwsh
 
       # ── 5. Build Vite bundle + NSIS installer ─────────────────────
       - name: Build
