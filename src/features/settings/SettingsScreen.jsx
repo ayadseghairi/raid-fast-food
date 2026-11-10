@@ -289,9 +289,11 @@ export default function SettingsScreen() {
                 onChange={e => setPrinterName(e.target.value)}
               >
                 <option value="">{ar.selectPrinter}</option>
-                {printers.map(p => (
-                  <option key={p} value={p}>{p}</option>
-                ))}
+                {printers.map(p => {
+                  const name = typeof p === 'string' ? p : p.name;
+                  const desc = typeof p === 'object' && p.description ? ` – ${p.description}` : '';
+                  return <option key={name} value={name}>{name}{desc}</option>;
+                })}
               </select>
               <Button variant="ghost" onClick={loadPrinters} disabled={loadingPrint}>
                 <Icon name="refresh" size={16} />

@@ -17,7 +17,7 @@
 const { BrowserWindow, app, dialog } = require('electron');
 const path = require('node:path');
 const { AppError } = require('../utils/errors.js');
-const { customerReceipt, kitchenReceipt, cancellationReceipt } = require('../utils/receiptTemplate.js');
+const { customerReceipt, kitchenReceipt, combinedPdfReceipt, cancellationReceipt } = require('../utils/receiptTemplate.js');
 const { getAllSettings } = require('../repositories/settings.js');
 const fs = require('node:fs');
 
@@ -155,7 +155,8 @@ async function getPrinters() {
     await loadHtml('<html><body></body></html>');
   }
   const printers = await win.webContents.getPrintersAsync();
-  return printers.map(p => p.name);
+  // Return all printers including virtual ones (Microsoft XPS, Save as PDF, etc.)
+  return printers.map(p => ({ name: p.name, description: p.description ?? '' }));
 }
 
 /**
@@ -218,7 +219,8 @@ async function savePdf({ order, items, isModified = false, isCancellation = fals
   if (isCancellation) {
     html = cancellationReceipt({ order, items, settings, logoDataUrl, widthMm: paperWidth });
   } else {
-    html = customerReceipt({ order, items, settings, logoDataUrl, widthMm: paperWidth, isModified });
+    // Combined PDF: customer receipt (with logo) + kitchen receipt (no logo) below
+    html = combinedPdfReceipt({ order, items, settings, logoDataUrl, widthMm: paperWidth, isModified });
   }
 
   await loadHtml(html);

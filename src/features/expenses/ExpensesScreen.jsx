@@ -3,7 +3,7 @@ import ar from '../../i18n/ar.js';
 import {
   expensesList, expensesCreate, expensesUpdate, expensesDelete,
 } from '../../api/index.js';
-import { format, fromMinor } from '../../utils/money.js';
+import { format, fromMinor, fmtDate } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
 import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
@@ -154,7 +154,7 @@ export default function ExpensesScreen() {
                   {CATEGORY_LABELS[exp.category] ?? exp.category}
                 </span>
                 <span className={styles.rowName}>{exp.name}</span>
-                <span className={styles.rowDate}>{exp.date}</span>
+                <span className={styles.rowDate}>{fmtDate(exp.date)}</span>
               </div>
               <div className={styles.rowRight}>
                 <span className={styles.rowAmount}>{format(exp.amount)} {ar.currency}</span>

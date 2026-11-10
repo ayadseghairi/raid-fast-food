@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Money helper – all amounts stored as INTEGER minor units (×100).
  * Use these everywhere; never do float arithmetic on money.
@@ -11,7 +13,7 @@
  * @param {number|string} decimal
  * @returns {number} integer minor units
  */
-export function toMinor(decimal) {
+function toMinor(decimal) {
   if (decimal === null || decimal === undefined || decimal === '') return 0;
   // Round to avoid float drift: 12.505 → 1251 not 1250
   return Math.round(Number(decimal) * 100);
@@ -22,7 +24,7 @@ export function toMinor(decimal) {
  * @param {number} minor
  * @returns {number}
  */
-export function fromMinor(minor) {
+function fromMinor(minor) {
   if (minor === null || minor === undefined) return 0;
   return minor / 100;
 }
@@ -33,7 +35,9 @@ export function fromMinor(minor) {
  * @param {number} minor
  * @returns {string}
  */
-export function format(minor) {
+function format(minor) {
   if (minor === null || minor === undefined) return '0.00';
   return (minor / 100).toFixed(2);
 }
+
+module.exports = { toMinor, fromMinor, format };

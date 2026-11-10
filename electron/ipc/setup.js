@@ -29,12 +29,12 @@ handle('setup:complete', async (payload) => {
   const hash = await hashPassword(ownerPassword);
 
   setManySettings({
-    restaurant_name: restaurantName.trim(),
-    phone: phone.trim(),
-    thank_you: thankYou?.trim() || 'شكراً لزيارتكم',
+    restaurant_name:      restaurantName.trim(),
+    restaurant_phone:     phone.trim(),
+    thank_you_message:    thankYou?.trim() || 'شكراً لزيارتكم',
     delivery_fee_default: String(toMinor(deliveryFee || 0)),
-    owner_password_hash: hash,
-    setup_done: '1',
+    owner_password_hash:  hash,
+    setup_done:           '1',
   });
 
   return { done: true };

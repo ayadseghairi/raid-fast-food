@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import ar from '../../i18n/ar.js';
 import { reportsGet, reportsExportExcel, reportsExportPdf } from '../../api/index.js';
-import { format } from '../../utils/money.js';
+import { format, fmtDate } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
 import FormField from '../../components/FormField.jsx';
 import Toast from '../../components/Toast.jsx';
@@ -250,7 +250,7 @@ export default function ReportsScreen() {
       {report && (
         <div className={styles.content}>
           <p className={styles.periodLabel}>
-            {ar.dateFrom}: {report.period.from} &nbsp;–&nbsp; {ar.dateTo}: {report.period.to}
+            {ar.dateFrom}: {fmtDate(report.period.from)} &nbsp;–&nbsp; {ar.dateTo}: {fmtDate(report.period.to)}
           </p>
 
           {/* Summary cards */}

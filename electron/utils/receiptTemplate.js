@@ -16,6 +16,29 @@ function fmtMoney(minor) {
   return fromMinor(minor).toFixed(2);
 }
 
+/**
+ * Format an ISO date/datetime string as DD/MM/YYYY (English digits, Algerian style).
+ * @param {Date} d
+ * @returns {string}
+ */
+function fmtDate(d) {
+  const day   = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year  = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
+/**
+ * Format time as HH:MM (24h, English digits).
+ * @param {Date} d
+ * @returns {string}
+ */
+function fmtTime(d) {
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
+}
+
 /** Build the CSS for the chosen paper width */
 function buildCss(widthMm) {
   return `
@@ -61,6 +84,8 @@ function buildCss(widthMm) {
     .order-type-badge { font-size:16px; font-weight:bold; text-align:center; padding:2mm; border:3px solid #000; margin:2mm 0; }
     .kitchen-item { font-size:14px; padding:1mm 0; border-bottom:1px dotted #aaa; }
     .kitchen-qty  { font-weight:bold; margin-left:2mm; }
+    /* page-break between customer and kitchen in combined PDF */
+    .page-break { page-break-before: always; }
   `;
 }
 
@@ -85,8 +110,8 @@ const ORDER_TYPE_LABEL = {
  */
 function customerReceipt({ order, items, settings, logoDataUrl, widthMm = 80, isModified = false }) {
   const orderDate = new Date(order.created_at);
-  const dateStr = orderDate.toLocaleDateString('ar-SA', { year: 'numeric', month: '2-digit', day: '2-digit' });
-  const timeStr = orderDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  const dateStr = fmtDate(orderDate);
+  const timeStr = fmtTime(orderDate);
 
   const itemsTotal = items.reduce((s, i) => s + i.line_total, 0);
   const fee = order.delivery_fee ?? 0;
@@ -175,12 +200,13 @@ function customerReceipt({ order, items, settings, logoDataUrl, widthMm = 80, is
  *   settings: object,
  *   widthMm?: number,
  *   isModified?: boolean,
+ *   pageBreakBefore?: boolean,  // add CSS page-break for combined PDF
  * }} opts
  * @returns {string}
  */
 function kitchenReceipt({ order, items, settings, widthMm = 80, isModified = false }) {
   const orderDate = new Date(order.created_at);
-  const timeStr = orderDate.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  const timeStr = fmtTime(orderDate);
   const restaurantName = settings.restaurant_name ?? 'فاست فود رائد';
 
   const modifiedBadge = isModified
@@ -220,12 +246,137 @@ function kitchenReceipt({ order, items, settings, widthMm = 80, isModified = fal
 }
 
 /**
- * Build a cancellation receipt (cashier copy for the owner).
- * @param {{ order: object, items: object[], settings: object, widthMm?: number }} opts
+ * Build a combined HTML page: customer receipt on top, kitchen receipt below
+ * (separated by a page-break), suitable for printing to PDF.
+ *
+ * @param {{
+ *   order:       object,
+ *   items:       object[],
+ *   settings:    object,
+ *   logoDataUrl?: string,
+ *   widthMm?:   number,
+ *   isModified?: boolean,
+ * }} opts
  * @returns {string}
  */
-function cancellationReceipt({ order, items, settings, widthMm = 80 }) {
-  return customerReceipt({ order, items, settings, widthMm })
+function combinedPdfReceipt({ order, items, settings, logoDataUrl, widthMm = 80, isModified = false }) {
+  const orderDate = new Date(order.created_at);
+  const dateStr = fmtDate(orderDate);
+  const timeStr = fmtTime(orderDate);
+
+  const itemsTotal = items.reduce((s, i) => s + i.line_total, 0);
+  const fee = order.delivery_fee ?? 0;
+  const restaurantName = settings.restaurant_name ?? 'فاست فود رائد';
+  const restaurantPhone = settings.restaurant_phone ?? '';
+  const thankYou = settings.thank_you_message ?? 'شكراً لزيارتكم';
+
+  const logoHtml = logoDataUrl
+    ? `<img class="logo" src="${logoDataUrl}" alt="${restaurantName}" />`
+    : '';
+
+  const customerItemRows = items.map(item => {
+    const optLines = (item.options ?? [])
+      .map(o => `<tr><td colspan="3" class="opt-line">+ ${o.label} (+${fmtMoney(o.price)})</td></tr>`)
+      .join('');
+    const noteLines = item.note
+      ? `<tr><td colspan="3" class="note-line">📝 ${item.note}</td></tr>`
+      : '';
+    return `
+      <tr>
+        <td>${item.product_name}</td>
+        <td class="num">${item.qty}×${fmtMoney(item.unit_price)}</td>
+        <td class="num">${fmtMoney(item.line_total)}</td>
+      </tr>
+      ${optLines}${noteLines}
+    `;
+  }).join('');
+
+  const feeRow = fee > 0
+    ? `<div class="total-row fee-row"><span>رسوم التوصيل</span><span>${fmtMoney(fee)}</span></div>`
+    : '';
+
+  const modifiedBadge = isModified
+    ? `<div class="badge" style="margin-bottom:3mm;">طلب معدّل</div>`
+    : '';
+
+  const kitchenModifiedBadge = isModified
+    ? `<div style="font-size:18px;font-weight:bold;text-align:center;color:#000;border:3px solid #000;padding:2mm;margin:2mm 0;">*** طلب معدّل ***</div>`
+    : '';
+
+  const kitchenItemRows = items.map(item => {
+    const opts = (item.options ?? []).map(o => `<div style="font-size:11px;padding-right:4mm;">+ ${o.label}</div>`).join('');
+    const note = item.note ? `<div style="font-size:11px;font-style:italic;padding-right:4mm;">📝 ${item.note}</div>` : '';
+    return `<div class="kitchen-item">
+      <span class="kitchen-qty">${item.qty}×</span>${item.product_name}
+      ${opts}${note}
+    </div>`;
+  }).join('');
+
+  return `<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+  <meta charset="UTF-8">
+  <style>${buildCss(widthMm)}</style>
+</head>
+<body>
+<!-- ══ Customer receipt ══ -->
+<div class="receipt">
+  <div class="center">
+    ${logoHtml}
+    <div class="brand">${restaurantName}</div>
+    ${restaurantPhone ? `<div class="phone">${restaurantPhone}</div>` : ''}
+    ${modifiedBadge}
+    <h2>#${order.number}</h2>
+    <div class="badge">${ORDER_TYPE_LABEL[order.order_type] ?? order.order_type}</div>
+    <div class="meta">${dateStr} – ${timeStr}</div>
+  </div>
+  <hr class="divider-solid">
+  <table>
+    <thead>
+      <tr>
+        <th>الصنف</th>
+        <th>الكمية×السعر</th>
+        <th>الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>${customerItemRows}</tbody>
+  </table>
+  <hr class="divider">
+  <div class="total-section">
+    <div class="total-row"><span>المجموع الفرعي</span><span>${fmtMoney(itemsTotal)}</span></div>
+    ${feeRow}
+    <div class="total-row grand"><span>الإجمالي</span><span>${fmtMoney(order.total)}</span></div>
+  </div>
+  ${order.order_type === 'delivery' && order.delivery_name
+    ? `<hr class="divider"><div class="meta">العميل: ${order.delivery_name} – ${order.delivery_phone ?? ''}</div>`
+    : ''}
+  <div class="thanks">${thankYou}</div>
+</div>
+
+<!-- ══ Kitchen receipt (no logo, page break before) ══ -->
+<div class="receipt page-break">
+  <div class="kitchen-title">${restaurantName} – مطبخ</div>
+  ${kitchenModifiedBadge}
+  <div style="text-align:center;font-size:28px;font-weight:bold;margin:2mm 0;">#${order.number}</div>
+  <div class="order-type-badge">${ORDER_TYPE_LABEL[order.order_type] ?? order.order_type}</div>
+  <div style="text-align:center;font-size:12px;color:#555;margin-bottom:3mm;">${timeStr}</div>
+  <hr class="divider-solid">
+  ${kitchenItemRows}
+  ${order.order_type === 'delivery' && order.delivery_name
+    ? `<hr class="divider"><div style="font-size:12px;">التوصيل: ${order.delivery_name}</div>`
+    : ''}
+</div>
+</body>
+</html>`;
+}
+
+/**
+ * Build a cancellation receipt (cashier copy for the owner).
+ * @param {{ order: object, items: object[], settings: object, logoDataUrl?: string, widthMm?: number }} opts
+ * @returns {string}
+ */
+function cancellationReceipt({ order, items, settings, logoDataUrl, widthMm = 80 }) {
+  return customerReceipt({ order, items, settings, logoDataUrl, widthMm })
     .replace(
       '</div>\n</body>',
       `<div style="text-align:center;font-size:16px;font-weight:bold;border:3px solid #000;padding:3mm;margin-top:4mm;">
@@ -234,4 +385,4 @@ function cancellationReceipt({ order, items, settings, widthMm = 80 }) {
     );
 }
 
-module.exports = { customerReceipt, kitchenReceipt, cancellationReceipt };
+module.exports = { customerReceipt, kitchenReceipt, combinedPdfReceipt, cancellationReceipt };

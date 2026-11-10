@@ -6,7 +6,7 @@ import {
   dayReport,
   dayListClosed,
 } from '../../api/index.js';
-import { format } from '../../utils/money.js';
+import { format, fmtDate } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import Icon from '../../components/Icon.jsx';
@@ -15,13 +15,14 @@ import styles from './CloseDayScreen.module.css';
 // ── Small helper ────────────────────────────────────────────────────
 function formatDate(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('ar-SA', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-  });
+  return fmtDate(iso);
 }
 function formatTime(iso) {
   if (!iso) return '—';
-  return new Date(iso).toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit' });
+  const d = new Date(iso);
+  const h = String(d.getHours()).padStart(2, '0');
+  const m = String(d.getMinutes()).padStart(2, '0');
+  return `${h}:${m}`;
 }
 
 // ── Stat card ───────────────────────────────────────────────────────

@@ -39,7 +39,18 @@ function updateShop(id, data) {
 
 function deleteShop(id) {
   if (!shopsRepo.getById(id)) throw new AppError('المورد غير موجود');
-  shopsRepo.remove(id);
+  // Delete related purchases and their items before deleting the shop
+  // (purchases.shop_id has no CASCADE so we must do it manually)
+  const db = getDb();
+  db.transaction(() => {
+    const purchases = shopsRepo.listPurchases(id);
+    for (const p of purchases) {
+      db.prepare('DELETE FROM purchase_items WHERE purchase_id = ?').run(p.id);
+    }
+    db.prepare('DELETE FROM purchases WHERE shop_id = ?').run(id);
+    // supplies are CASCADE-deleted by FK constraint
+    shopsRepo.remove(id);
+  })();
 }
 
 // ── Supplies ──────────────────────────────────────────────────────

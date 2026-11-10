@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Date/time utilities.
  * @module electron/utils/dates
@@ -7,7 +9,7 @@
  * Return the current date as YYYY-MM-DD.
  * @returns {string}
  */
-export function today() {
+function today() {
   return new Date().toISOString().slice(0, 10);
 }
 
@@ -15,25 +17,25 @@ export function today() {
  * Return the current ISO datetime string (UTC).
  * @returns {string}
  */
-export function nowIso() {
+function nowIso() {
   return new Date().toISOString();
 }
 
 /**
- * Format a datetime string for display (Arabic locale, local time).
+ * Format a datetime string for display using Algerian date format DD/MM/YYYY.
+ * Uses English digits.
  * @param {string|number} value – ISO string or Unix timestamp
  * @returns {string}
  */
-export function formatDisplay(value) {
+function formatDisplay(value) {
   if (!value) return '';
   const d = typeof value === 'number' ? new Date(value * 1000) : new Date(value);
-  return d.toLocaleString('ar-EG', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const day   = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year  = d.getFullYear();
+  const hours = String(d.getHours()).padStart(2, '0');
+  const mins  = String(d.getMinutes()).padStart(2, '0');
+  return `${day}/${month}/${year} ${hours}:${mins}`;
 }
 
 /**
@@ -41,7 +43,21 @@ export function formatDisplay(value) {
  * @param {string} iso
  * @returns {string} YYYY-MM-DD
  */
-export function dateOnly(iso) {
+function dateOnly(iso) {
   if (!iso) return '';
   return iso.slice(0, 10);
 }
+
+/**
+ * Format a YYYY-MM-DD or ISO date string as DD/MM/YYYY (English digits).
+ * @param {string} iso
+ * @returns {string}
+ */
+function fmtDate(iso) {
+  if (!iso) return '';
+  const parts = iso.slice(0, 10).split('-');
+  if (parts.length !== 3) return iso;
+  return `${parts[2]}/${parts[1]}/${parts[0]}`;
+}
+
+module.exports = { today, nowIso, formatDisplay, dateOnly, fmtDate };

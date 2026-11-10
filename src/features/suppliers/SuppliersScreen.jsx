@@ -6,7 +6,7 @@ import {
   purchasesList, purchasesCreate, purchasesUpdatePaid,
   purchasesDebtSummary,
 } from '../../api/index.js';
-import { format, fromMinor } from '../../utils/money.js';
+import { format, fromMinor, fmtDate } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
 import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
@@ -88,9 +88,15 @@ export default function SuppliersScreen() {
 
   async function confirmDeleteShop() {
     if (!deleteShopTarget) return;
-    await shopsDelete(deleteShopTarget.id);
+    const target = deleteShopTarget;
     setDeleteShopTarget(null);
-    if (selectedShop?.id === deleteShopTarget.id) { setSelectedShop(null); setView('list'); }
+    const res = await shopsDelete(target.id);
+    if (!res.ok) {
+      // Show error briefly — use shopError field
+      setShopError(res.error ?? ar.unknownError);
+      return;
+    }
+    if (selectedShop?.id === target.id) { setSelectedShop(null); setView('list'); }
     loadShops();
   }
 
@@ -367,7 +373,7 @@ function ShopPanel({ shop }) {
             {purchases.map(p => (
               <div key={p.id} className={styles.purchaseCard}>
                 <div className={styles.purchaseCardHead}>
-                  <span className={styles.purchaseDate}>{p.date}</span>
+                  <span className={styles.purchaseDate}>{fmtDate(p.date)}</span>
                   <span className={styles.purchaseTotal}>{format(p.total)} {ar.currency}</span>
                 </div>
                 <div className={styles.purchaseCardFoot}>
