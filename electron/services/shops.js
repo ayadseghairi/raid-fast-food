@@ -82,7 +82,13 @@ function updateSupply(id, data) {
 
 function deleteSupply(id) {
   if (!shopsRepo.getSupplyById(id)) throw new AppError('الصنف غير موجود');
-  shopsRepo.removeSupply(id);
+  // Nullify supply_id references in purchase_items before deleting
+  // (purchase_items.supply_id has no ON DELETE SET NULL)
+  const db = getDb();
+  db.transaction(() => {
+    db.prepare('UPDATE purchase_items SET supply_id = NULL WHERE supply_id = ?').run(id);
+    shopsRepo.removeSupply(id);
+  })();
 }
 
 // ── Purchases ─────────────────────────────────────────────────────
