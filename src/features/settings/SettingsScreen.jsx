@@ -9,6 +9,8 @@ import {
   backupNow,
   backupRestore,
   backupList,
+  dataClearTransactions,
+  dataClearAll,
 } from '../../api/index.js';
 import { toMinor, fromMinor } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
@@ -69,6 +71,13 @@ export default function SettingsScreen() {
   const [encPw,           setEncPw]           = useState('');
   const [encPwError,      setEncPwError]      = useState('');
   const [backupFiles,     setBackupFiles]     = useState([]);
+
+  // Danger zone
+  const [dangerModal,  setDangerModal]  = useState(false);
+  const [dangerType,   setDangerType]   = useState('');   // 'transactions' | 'all'
+  const [dangerPw,     setDangerPw]     = useState('');
+  const [dangerBusy,   setDangerBusy]   = useState(false);
+  const [dangerError,  setDangerError]  = useState('');
 
   // ── Load settings ──────────────────────────────────────────────
   const load = useCallback(async () => {
@@ -219,6 +228,27 @@ export default function SettingsScreen() {
     setRestorePw('');
     if (!res.ok) return flash(res.error ?? ar.unknownError, 'error');
     flash(ar.restoreSuccess);
+  }
+
+  // ── Danger zone ───────────────────────────────────────────────
+  function openDanger(type) {
+    setDangerType(type);
+    setDangerPw('');
+    setDangerError('');
+    setDangerModal(true);
+  }
+
+  async function executeDanger() {
+    if (!dangerPw.trim()) { setDangerError(ar.required); return; }
+    setDangerError('');
+    setDangerBusy(true);
+    const fn = dangerType === 'all' ? dataClearAll : dataClearTransactions;
+    const res = await fn(dangerPw);
+    setDangerBusy(false);
+    if (!res.ok) { setDangerError(res.error ?? ar.unknownError); return; }
+    setDangerModal(false);
+    flash(ar.success);
+    load();
   }
 
   async function restoreFromAutoBackup(filePath) {
@@ -391,6 +421,32 @@ export default function SettingsScreen() {
         </div>
       </Section>
 
+      {/* ── Danger zone ──────────────────────────────────────── */}
+      <section className={styles.dangerSection}>
+        <h3 className={styles.dangerTitle}>{ar.dangerZone}</h3>
+        <p className={styles.dangerHint}>{ar.dangerZoneHint}</p>
+        <div className={styles.dangerActions}>
+          <div className={styles.dangerCard}>
+            <div className={styles.dangerCardText}>
+              <span className={styles.dangerCardTitle}>{ar.clearTransactions}</span>
+              <span className={styles.dangerCardDesc}>{ar.clearTransactionsDesc}</span>
+            </div>
+            <Button variant="danger" onClick={() => openDanger('transactions')}>
+              {ar.clearTransactions}
+            </Button>
+          </div>
+          <div className={styles.dangerCard}>
+            <div className={styles.dangerCardText}>
+              <span className={styles.dangerCardTitle}>{ar.clearAll}</span>
+              <span className={styles.dangerCardDesc}>{ar.clearAllDesc}</span>
+            </div>
+            <Button variant="danger" onClick={() => openDanger('all')}>
+              {ar.clearAll}
+            </Button>
+          </div>
+        </div>
+      </section>
+
       {/* ── Delivery fee numpad ───────────────────────────────── */}
       <Modal open={feeModal} title={ar.defaultDeliveryFee} onClose={() => setFeeModal(false)} size="sm">
         <NumPad value={feeValue} onChange={setFeeValue} decimal />
@@ -488,6 +544,33 @@ export default function SettingsScreen() {
         onConfirm={() => restoreFile && restoreFromAutoBackup(restoreFile.path)}
         onCancel={() => setConfirmRestore(false)}
       />
+
+      {/* ── Danger zone confirm modal ─────────────────────────── */}
+      <Modal
+        open={dangerModal}
+        title={dangerType === 'all' ? ar.clearAll : ar.clearTransactions}
+        onClose={() => !dangerBusy && setDangerModal(false)}
+        size="sm"
+      >
+        <div className={styles.pwForm}>
+          <p className={styles.dangerWarning}>
+            {dangerType === 'all' ? ar.clearAllConfirm : ar.clearTransactionsConfirm}
+          </p>
+          <FormField label={ar.dangerPasswordPrompt}>
+            <input
+              type="password"
+              className={styles.input}
+              value={dangerPw}
+              onChange={e => setDangerPw(e.target.value)}
+              autoComplete="current-password"
+            />
+          </FormField>
+          {dangerError && <p className={styles.error}>{dangerError}</p>}
+          <Button variant="danger" fullWidth onClick={executeDanger} disabled={dangerBusy}>
+            {dangerBusy ? ar.loading : ar.confirm}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }
