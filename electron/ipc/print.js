@@ -45,15 +45,17 @@ handle('print:previewHtml', ({ orderId, copy, widthMm, isModified }) => {
   if (!VALID_COPIES.includes(copy)) throw new AppError('نوع الوصل غير صحيح');
 
   const { order, items } = loadOrder(orderId);
-  const settings    = getAllSettings();
-  const paperWidth  = widthMm ?? Number(settings.paper_width ?? 80);
+  const settings   = getAllSettings();
+  const paperWidth = widthMm ?? Number(settings.paper_width ?? 80);
+  // Include the logo data URI so the preview matches the printed receipt
+  const logoDataUrl = printSvc.getLogoDataUrl();
 
   const html = printSvc.renderReceiptHtml({
     copy,
     order,
     items,
     settings,
-    logoDataUrl: null,   // preview will use data: URI if available
+    logoDataUrl,
     widthMm: paperWidth,
     isModified: !!isModified,
   });

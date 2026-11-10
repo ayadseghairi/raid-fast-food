@@ -5,6 +5,11 @@ const path = require('node:path');
 
 // Disable Chromium telemetry / crash-reporter features
 app.commandLine.appendSwitch('disable-features', 'Reporting');
+// Suppress VA-API / GPU codec warnings on Linux systems without hardware video acceleration
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('disable-gpu-sandbox');
+  app.commandLine.appendSwitch('use-gl', 'swiftshader');
+}
 
 const isDev = process.env.NODE_ENV === 'development';
 

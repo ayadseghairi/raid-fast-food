@@ -362,6 +362,7 @@ module.exports = {
   listPrinters,
   renderReceiptHtml,
   pageSizeForWidth,
+  getLogoDataUrl,   // exported so IPC can pass logo to preview
   print,
   savePdfToFile,
   // Legacy (keep existing IPC channels working)

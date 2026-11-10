@@ -76,10 +76,10 @@
 .previewFrame {
   display: block;
   border: none;
-  min-height: 200px;
-  height: auto;
-  /* Let content size determine height */
-  overflow: hidden;
+  min-height: 300px;
+  /* Use a tall fixed height so the receipt is fully visible and scrollable */
+  height: 700px;
+  overflow: auto;
 }
 
 /* ── Controls column ────────────────────────────────────────────── */

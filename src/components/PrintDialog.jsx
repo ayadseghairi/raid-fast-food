@@ -229,7 +229,7 @@ export default function PrintDialog({
                 ref={iframeRef}
                 className={styles.previewFrame}
                 title="receipt-preview"
-                sandbox="allow-same-origin"
+                sandbox="allow-same-origin allow-scripts"
                 srcDoc={previewHtml}
                 onLoad={handleIframeLoad}
                 style={{ width: previewWidth, opacity: previewReady ? 1 : 0 }}
