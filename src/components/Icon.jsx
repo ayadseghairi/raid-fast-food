@@ -56,6 +56,7 @@ import {
   BiUndo,
   BiFolderOpen,
   BiReset,
+  BiGroup,
 } from 'react-icons/bi';
 
 const ICON_MAP = {
@@ -109,13 +110,14 @@ const ICON_MAP = {
   folder: BiFolderOpen,
   restore: BiReset,
   // Navigation aliases
-  pos: BiReceipt,
-  orders: BiListUl,
-  products: BiPackage,
-  suppliers: BiStore,
-  expenses: BiMoney,
-  reports: BiBarChartAlt2,
-  closeDay: BiCalendarCheck,
+  pos:        BiReceipt,
+  orders:     BiListUl,
+  products:   BiPackage,
+  suppliers:  BiStore,
+  expenses:   BiMoney,
+  workersPay: BiGroup,
+  reports:    BiBarChartAlt2,
+  closeDay:   BiCalendarCheck,
 };
 
 /**

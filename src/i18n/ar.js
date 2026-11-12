@@ -272,6 +272,25 @@ const ar = {
   exportSaved: 'تم حفظ الملف',
   exportCancelled: 'تم إلغاء الحفظ',
 
+  // ── Reports extended ────────────────────────────────────────────
+  byDayLabel: 'حسب اليوم',
+  ordersList: 'قائمة الطلبات',
+  cancelledOrders: 'الطلبات الملغية',
+  cancelledNote: '(مستثناة من الإجمالي)',
+  orderDetailTitle: 'تفاصيل الطلب',
+  auditLogTitle: 'سجل التعديلات',
+  totalDeliveryFees: 'رسوم التوصيل',
+  workersPaySection: 'رواتب العمال',
+  totalExpensesAll: 'إجمالي المصروفات',
+  chartsTitle: 'الرسوم البيانية',
+  chartSalesPerDay: 'المبيعات اليومية',
+  chartSalesByType: 'المبيعات حسب النوع',
+  sizeLabelReport: 'الحجم',
+  noOrdersInRange: 'لا توجد طلبات في هذه الفترة',
+  testPrintSuccess: 'تمت الطباعة التجريبية بنجاح',
+  testPrintFailed: 'فشلت الطباعة التجريبية',
+  testPrintSavePdf: 'حفظ تجربة PDF',
+
   // ── Settings ────────────────────────────────────────────────────
   settingsTitle: 'الإعدادات',
   printerSettings: 'إعدادات الطابعة',

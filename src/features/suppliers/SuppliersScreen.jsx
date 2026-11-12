@@ -12,6 +12,7 @@ import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import FormField from '../../components/FormField.jsx';
+import DateInput from '../../components/DateInput.jsx';
 import styles from './SuppliersScreen.module.css';
 
 // ── helpers ────────────────────────────────────────────────────────
@@ -430,7 +431,7 @@ function ShopPanel({ shop }) {
       <Modal open={purchaseModal} title={ar.addPurchase} onClose={() => setPurchaseModal(false)} size="md">
         <div className={styles.purchaseForm}>
           <FormField label={ar.purchaseDate}>
-            <input className={styles.input} type="date" value={pDate} onChange={e => setPDate(e.target.value)} dir="ltr" />
+            <DateInput value={pDate} onChange={setPDate} />
           </FormField>
 
           <div className={styles.pItemsHeader}>

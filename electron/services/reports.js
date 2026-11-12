@@ -10,7 +10,7 @@
  * @module electron/services/reports
  */
 
-const { getDb } = require('../db/connection.js');
+const { getDb }  = require('../db/connection.js');
 const { AppError } = require('../utils/errors.js');
 
 // ── Helpers ───────────────────────────────────────────────────────
@@ -51,59 +51,130 @@ function resolveDateRange(period, dateFrom, dateTo) {
 
   // custom
   if (!dateFrom || !dateTo) throw new AppError('يجب تحديد تاريخ البداية والنهاية');
-  if (dateFrom > dateTo) throw new AppError('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
+  if (dateFrom > dateTo)   throw new AppError('تاريخ البداية يجب أن يكون قبل تاريخ النهاية');
   return { from: dateFrom, to: dateTo };
 }
 
 // ── Section queries ───────────────────────────────────────────────
 
 /**
- * Get the business_day ids whose date falls within [from, to].
+ * Get the business_day rows whose date falls within [from, to].
  * @param {string} from
  * @param {string} to
- * @returns {number[]}
+ * @returns {{ id: number, date: string }[]}
  */
-function getDayIds(from, to) {
-  const rows = getDb()
-    .prepare('SELECT id FROM business_days WHERE date >= ? AND date <= ?')
+function getDays(from, to) {
+  return getDb()
+    .prepare('SELECT id, date FROM business_days WHERE date >= ? AND date <= ? ORDER BY date ASC')
     .all(from, to);
-  return rows.map(r => r.id);
 }
 
 /**
- * Sales summary: receipt count, total sales, breakdown by order type.
+ * Sales summary: receipt count, total sales, delivery fees, breakdown by order type.
  */
 function querySales(dayIds) {
   if (dayIds.length === 0) {
     return {
-      receiptCount: 0,
-      totalSales: 0,
+      receiptCount:       0,
+      totalSales:         0,
+      totalDeliveryFees:  0,
       byType: { dine_in: 0, takeaway: 0, delivery: 0 },
     };
   }
 
-  const placeholders = dayIds.map(() => '?').join(',');
+  const ph = dayIds.map(() => '?').join(',');
 
   const rows = getDb()
     .prepare(
-      `SELECT order_type, COUNT(*) as cnt, COALESCE(SUM(total),0) as total
+      `SELECT order_type,
+              COUNT(*)                     AS cnt,
+              COALESCE(SUM(total),0)       AS total,
+              COALESCE(SUM(delivery_fee),0) AS fees
        FROM orders
-       WHERE day_id IN (${placeholders}) AND status != 'cancelled'
+       WHERE day_id IN (${ph}) AND status != 'cancelled'
        GROUP BY order_type`
     )
     .all(...dayIds);
 
   const byType = { dine_in: 0, takeaway: 0, delivery: 0 };
-  let receiptCount = 0;
-  let totalSales = 0;
+  let receiptCount      = 0;
+  let totalSales        = 0;
+  let totalDeliveryFees = 0;
 
   for (const row of rows) {
     byType[row.order_type] = (byType[row.order_type] ?? 0) + row.total;
-    receiptCount += row.cnt;
-    totalSales   += row.total;
+    receiptCount      += row.cnt;
+    totalSales        += row.total;
+    totalDeliveryFees += row.fees;
   }
 
-  return { receiptCount, totalSales, byType };
+  return { receiptCount, totalSales, totalDeliveryFees, byType };
+}
+
+/**
+ * Sales grouped by day, for the by-day breakdown table.
+ * @param {{ id: number, date: string }[]} days
+ */
+function queryByDay(days) {
+  if (days.length === 0) return [];
+  const ph = days.map(() => '?').join(',');
+  const ids = days.map(d => d.id);
+
+  const rows = getDb()
+    .prepare(
+      `SELECT day_id,
+              COUNT(*)                      AS orders,
+              COALESCE(SUM(total),0)        AS sales,
+              COALESCE(SUM(delivery_fee),0) AS fees
+       FROM orders
+       WHERE day_id IN (${ph}) AND status != 'cancelled'
+       GROUP BY day_id`
+    )
+    .all(...ids);
+
+  // Expense totals per day
+  const expRows = getDb()
+    .prepare(
+      `SELECT day_id, COALESCE(SUM(amount),0) AS expenses
+       FROM expenses WHERE day_id IN (${ph})
+       GROUP BY day_id`
+    )
+    .all(...ids);
+
+  // Worker pay per day (join through date) — guard against missing migration
+  const dayDates = days.map(d => d.date);
+  let workerPayByDate = {};
+  const wpTableExists = getDb()
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='worker_payments'")
+    .get();
+  if (wpTableExists && dayDates.length > 0) {
+    const ph2 = dayDates.map(() => '?').join(',');
+    const wpRows = getDb()
+      .prepare(
+        `SELECT date, COALESCE(SUM(amount),0) AS wpay
+         FROM worker_payments
+         WHERE date IN (${ph2})
+         GROUP BY date`
+      )
+      .all(...dayDates);
+    for (const r of wpRows) workerPayByDate[r.date] = r.wpay;
+  }
+
+  const salesMap = Object.fromEntries(rows.map(r => [r.day_id, r]));
+  const expMap   = Object.fromEntries(expRows.map(r => [r.day_id, r.expenses]));
+
+  return days.map(d => {
+    const s   = salesMap[d.id] ?? { orders: 0, sales: 0, fees: 0 };
+    const exp = (expMap[d.id] ?? 0) + (workerPayByDate[d.date] ?? 0);
+    return {
+      date:     d.date,
+      orders:   s.orders,
+      sales:    s.sales,
+      fees:     s.fees,
+      expenses: exp,
+      net:      s.sales - exp,
+    };
+  });
 }
 
 /**
@@ -114,8 +185,8 @@ function queryPurchases(from, to) {
   const rows = getDb()
     .prepare(
       `SELECT s.id as shop_id, s.name as shop_name,
-              COALESCE(SUM(p.total),0) as total,
-              COALESCE(SUM(p.paid),0) as paid,
+              COALESCE(SUM(p.total),0)     as total,
+              COALESCE(SUM(p.paid),0)      as paid,
               COALESCE(SUM(p.remaining),0) as remaining
        FROM shops s
        LEFT JOIN purchases p ON p.shop_id = s.id AND p.date >= ? AND p.date <= ?
@@ -124,10 +195,28 @@ function queryPurchases(from, to) {
     )
     .all(from, to);
 
+  // Also get individual purchase rows (with items) for detailed view
+  const purchaseRows = getDb()
+    .prepare(
+      `SELECT p.id, p.shop_id, s.name as shop_name,
+              p.date, p.total, p.paid, p.remaining
+       FROM purchases p
+       JOIN shops s ON s.id = p.shop_id
+       WHERE p.date >= ? AND p.date <= ?
+       ORDER BY p.date DESC, s.name ASC`
+    )
+    .all(from, to);
+
+  for (const pr of purchaseRows) {
+    pr.items = getDb()
+      .prepare('SELECT * FROM purchase_items WHERE purchase_id = ? ORDER BY id')
+      .all(pr.id);
+  }
+
   const totalPurchases = rows.reduce((s, r) => s + r.total, 0);
   const totalPaid      = rows.reduce((s, r) => s + r.paid, 0);
 
-  return { rows, totalPurchases, totalPaid };
+  return { rows, purchaseRows, totalPurchases, totalPaid };
 }
 
 /**
@@ -148,6 +237,7 @@ function queryRemainingDebts() {
 
 /**
  * Other expenses summary (by category, for date range).
+ * Also returns individual expense rows.
  */
 function queryExpenses(from, to) {
   const rows = getDb()
@@ -159,37 +249,121 @@ function queryExpenses(from, to) {
     )
     .all(from, to);
 
+  const expenseRows = getDb()
+    .prepare(
+      `SELECT id, name, amount, date, category
+       FROM expenses WHERE date >= ? AND date <= ?
+       ORDER BY date DESC, id DESC`
+    )
+    .all(from, to);
+
   const totalExpenses = rows.reduce((s, r) => s + r.total, 0);
-  return { rows, totalExpenses };
+  return { rows, expenseRows, totalExpenses };
 }
 
 /**
- * Best/worst selling products.
+ * Workers' pay for the date range.
+ * Returns per-worker summary + total.
+ */
+function queryWorkersPay(from, to) {
+  // Check if workers table exists (migration 003 may not have run in tests)
+  const tableExists = getDb()
+    .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='workers'")
+    .get();
+  if (!tableExists) return { rows: [], total: 0 };
+
+  const rows = getDb()
+    .prepare(
+      `SELECT w.id as worker_id, w.name as worker_name,
+              COUNT(wp.id)              AS days_paid,
+              COALESCE(SUM(wp.amount),0) AS total_paid
+       FROM workers w
+       LEFT JOIN worker_payments wp ON wp.worker_id = w.id
+         AND wp.date >= ? AND wp.date <= ?
+       GROUP BY w.id, w.name
+       ORDER BY w.name ASC`
+    )
+    .all(from, to);
+
+  const total = rows.reduce((s, r) => s + r.total_paid, 0);
+  return { rows, total };
+}
+
+/**
+ * Best/worst selling products (with size).
  * @param {number[]} dayIds
  * @returns {{ best: object[], worst: object[] }}
  */
 function queryProductRanking(dayIds) {
   if (dayIds.length === 0) return { best: [], worst: [] };
 
-  const placeholders = dayIds.map(() => '?').join(',');
+  const ph = dayIds.map(() => '?').join(',');
 
   const rows = getDb()
     .prepare(
       `SELECT oi.product_name,
-              SUM(oi.qty) as total_qty,
-              COALESCE(SUM(oi.line_total),0) as total_revenue
+              oi.options,
+              SUM(oi.qty)                    AS total_qty,
+              COALESCE(SUM(oi.line_total),0) AS total_revenue
        FROM order_items oi
        JOIN orders o ON o.id = oi.order_id
-       WHERE o.day_id IN (${placeholders}) AND o.status != 'cancelled'
-       GROUP BY oi.product_name
+       WHERE o.day_id IN (${ph}) AND o.status != 'cancelled'
+       GROUP BY oi.product_name, oi.options
        ORDER BY total_qty DESC`
+    )
+    .all(...dayIds)
+    .map(r => {
+      // Extract size name from options JSON if present
+      let sizeName = '';
+      try {
+        const opts = JSON.parse(r.options ?? '[]');
+        const sizeOpt = opts.find(o => o.type === 'size');
+        if (sizeOpt) sizeName = sizeOpt.label ?? '';
+      } catch { /* ignore */ }
+      return { ...r, size_name: sizeName };
+    });
+
+  const best  = rows.slice(0, 20);
+  const worst = [...rows].reverse().slice(0, 20);
+
+  return { best, worst };
+}
+
+/**
+ * Orders list for the period (including items, audit log, delivery info).
+ * Excludes cancelled orders (they are returned separately).
+ */
+function queryOrdersList(dayIds) {
+  if (dayIds.length === 0) return { orders: [], cancelled: [] };
+
+  const ph = dayIds.map(() => '?').join(',');
+
+  const allOrders = getDb()
+    .prepare(
+      `SELECT o.*,
+              bd.date AS day_date
+       FROM orders o
+       JOIN business_days bd ON bd.id = o.day_id
+       WHERE o.day_id IN (${ph})
+       ORDER BY o.created_at DESC`
     )
     .all(...dayIds);
 
-  const best  = rows.slice(0, 10);
-  const worst = [...rows].reverse().slice(0, 10);
+  for (const o of allOrders) {
+    o.items = getDb()
+      .prepare('SELECT * FROM order_items WHERE order_id = ? ORDER BY id')
+      .all(o.id)
+      .map(r => ({ ...r, options: JSON.parse(r.options ?? '[]') }));
 
-  return { best, worst };
+    o.auditLog = getDb()
+      .prepare('SELECT * FROM audit_log WHERE order_id = ? ORDER BY created_at ASC')
+      .all(o.id);
+  }
+
+  const orders    = allOrders.filter(o => o.status !== 'cancelled');
+  const cancelled = allOrders.filter(o => o.status === 'cancelled');
+
+  return { orders, cancelled };
 }
 
 // ── Main entry point ──────────────────────────────────────────────
@@ -202,23 +376,32 @@ function queryProductRanking(dayIds) {
 function getReport({ period = 'day', dateFrom, dateTo } = {}) {
   const { from, to } = resolveDateRange(period, dateFrom, dateTo);
 
-  const dayIds = getDayIds(from, to);
+  const days   = getDays(from, to);
+  const dayIds = days.map(d => d.id);
 
-  const { receiptCount, totalSales, byType } = querySales(dayIds);
-  const { rows: purchaseRows, totalPurchases, totalPaid } = queryPurchases(from, to);
+  const { receiptCount, totalSales, totalDeliveryFees, byType } = querySales(dayIds);
+  const byDay  = queryByDay(days);
+  const { rows: purchaseRows, purchaseRows: purchaseDetail, totalPurchases, totalPaid } = queryPurchases(from, to);
   const remainingDebts = queryRemainingDebts();
-  const { rows: expenseRows, totalExpenses } = queryExpenses(from, to);
+  const { rows: expenseRows, expenseRows: expenseDetail, totalExpenses } = queryExpenses(from, to);
+  const workersPay     = queryWorkersPay(from, to);
   const { best, worst } = queryProductRanking(dayIds);
+  const { orders, cancelled } = queryOrdersList(dayIds);
 
-  const net = totalSales - totalExpenses - totalPurchases;
+  const totalExpensesAll = totalExpenses + workersPay.total;
+  const net = totalSales - totalExpensesAll - totalPurchases;
 
   return {
     period: { period, from, to },
-    sales: { receiptCount, totalSales, byType },
-    purchases: { rows: purchaseRows, totalPurchases, totalPaid },
+    sales: { receiptCount, totalSales, totalDeliveryFees, byType },
+    byDay,
+    purchases: { rows: purchaseRows, purchaseDetail, totalPurchases, totalPaid },
     remainingDebts,
-    expenses: { rows: expenseRows, totalExpenses },
+    expenses: { rows: expenseRows, expenseDetail, totalExpenses },
+    workersPay,
     products: { best, worst },
+    orders,
+    cancelled,
     net,
   };
 }

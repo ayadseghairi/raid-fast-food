@@ -71,6 +71,7 @@ const ALLOWED_CHANNELS = [
   'print:previewHtml',
   'print:run',
   'print:savePdf',
+  'print:testPrint',
   'backup:now',
   'backup:restore',
   'backup:chooseFolder',

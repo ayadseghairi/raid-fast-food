@@ -9,6 +9,7 @@ import Icon from '../../components/Icon.jsx';
 import Modal from '../../components/Modal.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import FormField from '../../components/FormField.jsx';
+import DateInput from '../../components/DateInput.jsx';
 import styles from './ExpensesScreen.module.css';
 
 const CATEGORY_LABELS = {
@@ -108,22 +109,8 @@ export default function ExpensesScreen() {
           <option value="">{ar.expenseCategory}: {ar.select}</option>
           {CATEGORIES.map(c => <option key={c} value={c}>{CATEGORY_LABELS[c]}</option>)}
         </select>
-        <input
-          className={styles.filterInput}
-          type="date"
-          value={filterFrom}
-          onChange={e => setFilterFrom(e.target.value)}
-          dir="ltr"
-          title={ar.dateFrom}
-        />
-        <input
-          className={styles.filterInput}
-          type="date"
-          value={filterTo}
-          onChange={e => setFilterTo(e.target.value)}
-          dir="ltr"
-          title={ar.dateTo}
-        />
+        <DateInput value={filterFrom} onChange={setFilterFrom} />
+        <DateInput value={filterTo}   onChange={setFilterTo}   />
         <Button size="sm" variant="ghost" onClick={() => { setFilterCat(''); setFilterFrom(''); setFilterTo(''); }}>
           <Icon name="close" size={14} /> {ar.clear}
         </Button>
@@ -185,7 +172,7 @@ export default function ExpensesScreen() {
             <input className={styles.input} type="number" min="0" step="1" value={fAmount} onChange={e => setFAmount(e.target.value)} dir="ltr" />
           </FormField>
           <FormField label={ar.expenseDate}>
-            <input className={styles.input} type="date" value={fDate} onChange={e => setFDate(e.target.value)} dir="ltr" />
+            <DateInput value={fDate} onChange={setFDate} />
           </FormField>
           <FormField label={ar.expenseCategory}>
             <select className={styles.select} value={fCategory} onChange={e => setFCategory(e.target.value)}>

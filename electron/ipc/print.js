@@ -111,6 +111,34 @@ handle('print:savePdf', async ({ orderId, widthMm, isModified, isCancellation })
   });
 });
 
+// ── Test print ────────────────────────────────────────────────────
+
+/**
+ * payload:
+ *   deviceName?:  string   – use saved printer if omitted
+ *   widthMm?:     number   – use saved paper width if omitted
+ *   savePdf?:     boolean  – if true, open save-as-PDF dialog instead
+ */
+handle('print:testPrint', async ({ deviceName, widthMm, savePdf } = {}) => {
+  const settings = getAllSettings();
+  const printer  = deviceName ?? settings.printer_name ?? '';
+  const width    = widthMm    ?? Number(settings.paper_width ?? 80);
+  const logoDataUrl = printSvc.getLogoDataUrl();
+
+  const html = printSvc.buildTestReceiptHtml({ settings, logoDataUrl, widthMm: width });
+
+  if (savePdf) {
+    return printSvc.saveTestPdf({ html, width });
+  }
+
+  if (!printer) {
+    throw new AppError('الرجاء اختيار طابعة في الإعدادات أولاً');
+  }
+
+  await printSvc.printHtmlDirect({ html, deviceName: printer, widthMm: width });
+  return { printed: true };
+});
+
 // ── Legacy channels (backward compatibility) ──────────────────────
 
 handle('print:getPrinters', async () => {

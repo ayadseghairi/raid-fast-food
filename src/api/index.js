@@ -103,6 +103,7 @@ export const printListPrinters = () => call('print:listPrinters', {});
 export const printPreviewHtml  = (data) => call('print:previewHtml', data);
 export const printRun          = (data) => call('print:run', data);
 export const printSavePdf      = (data) => call('print:savePdf', data);
+export const printTestPrint    = (data) => call('print:testPrint', data ?? {});
 
 // ── Backup ──────────────────────────────────────────────────────
 export const backupNow = (ownerPassword, destPath) =>

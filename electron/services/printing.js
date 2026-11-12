@@ -438,6 +438,126 @@ function savePdfToFile({ order, items, widthMm, isModified = false, isCancellati
   });
 }
 
+// ── Test print helpers ────────────────────────────────────────────
+
+/**
+ * Build a sample receipt HTML for the test-print feature.
+ * Uses the same CSS as real receipts but with dummy content.
+ *
+ * @param {{ settings: object, logoDataUrl: string|null, widthMm: number }} opts
+ * @returns {string}
+ */
+function buildTestReceiptHtml({ settings, logoDataUrl, widthMm = 80 }) {
+  const name    = settings.restaurant_name  ?? 'فاست فود رائد';
+  const phone   = settings.restaurant_phone ?? '';
+  const thanks  = settings.thank_you_message ?? 'شكراً لزيارتكم';
+  const now     = new Date();
+  const dd      = String(now.getDate()).padStart(2, '0');
+  const mm      = String(now.getMonth() + 1).padStart(2, '0');
+  const yyyy    = now.getFullYear();
+  const hh      = String(now.getHours()).padStart(2, '0');
+  const min     = String(now.getMinutes()).padStart(2, '0');
+  const dateStr = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
+
+  const logoHtml = logoDataUrl
+    ? `<img src="${logoDataUrl}" style="max-width:${widthMm * 0.5}mm;height:auto;display:block;margin:0 auto 4mm auto;" />`
+    : '';
+
+  return `<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: ${widthMm}mm auto; margin: 0; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    width: ${widthMm}mm;
+    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+    font-size: 11px;
+    color: #000;
+    direction: rtl;
+    padding: 4mm;
+  }
+  .center { text-align: center; }
+  .bold   { font-weight: bold; }
+  .line   { border-top: 1px dashed #000; margin: 3mm 0; }
+  .row    { display: flex; justify-content: space-between; margin: 1mm 0; }
+</style>
+</head>
+<body>
+  ${logoHtml}
+  <div class="center bold" style="font-size:14px">${name}</div>
+  ${phone ? `<div class="center" style="font-size:10px;direction:ltr">${phone}</div>` : ''}
+  <div class="center" style="font-size:10px;margin-top:2mm">طباعة تجريبية — ${dateStr}</div>
+  <div class="line"></div>
+  <div class="row"><span>فاتورة رقم:</span><span><b>999</b></span></div>
+  <div class="row"><span>النوع:</span><span>محلي</span></div>
+  <div class="line"></div>
+  <div class="row"><span>بيتزا مشكلة</span><span>250.00</span></div>
+  <div class="row"><span>عصير — 1 L</span><span>150.00</span></div>
+  <div class="row"><span>برغر دجاج x2</span><span>400.00</span></div>
+  <div class="line"></div>
+  <div class="row bold"><span>الإجمالي</span><span>800.00 دج</span></div>
+  <div class="line"></div>
+  <div class="center" style="font-size:12px;margin-top:2mm">${thanks}</div>
+</body>
+</html>`;
+}
+
+/**
+ * Print an arbitrary HTML string directly to a printer (no order needed).
+ * Used for test-print.
+ * @param {{ html: string, deviceName: string, widthMm: number }} opts
+ */
+function printHtmlDirect({ html, deviceName, widthMm = 80 }) {
+  return enqueue(async () => {
+    await loadHtml(html, widthMm);
+    const pageSize = pageSizeForWidth(widthMm);
+    await new Promise((resolve, reject) => {
+      const win = getPrintWindow(widthMm);
+      win.webContents.print(
+        {
+          silent: true,
+          printBackground: true,
+          color: false,
+          margins: { marginType: 'none' },
+          pageSize,
+          deviceName,
+        },
+        (success, reason) => {
+          if (success) resolve();
+          else reject(new AppError(`فشلت الطباعة التجريبية: ${reason ?? 'unknown'}`));
+        }
+      );
+    });
+  });
+}
+
+/**
+ * Save a test receipt HTML as PDF (prompts save dialog).
+ * @param {{ html: string, width: number }} opts
+ * @returns {Promise<{ saved: boolean, filePath?: string }>}
+ */
+function saveTestPdf({ html, width = 80 }) {
+  return enqueue(async () => {
+    await loadHtml(html, width);
+    const pageSize = pageSizeForWidth(width);
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'حفظ الطباعة التجريبية كـ PDF',
+      defaultPath: path.join(app.getPath('downloads'), 'test-receipt.pdf'),
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    });
+    if (canceled || !filePath) return { saved: false };
+    const pdfBuf = await getPrintWindow(width).webContents.printToPDF({
+      printBackground: true,
+      margins: { marginType: 'none' },
+      pageSize,
+    });
+    await fsp.writeFile(filePath, pdfBuf);
+    return { saved: true, filePath };
+  });
+}
+
 // ── Legacy compatibility wrappers (used by existing IPC channels) ──
 
 async function getPrinters() { return listPrinters(); }
@@ -464,6 +584,10 @@ module.exports = {
   resetLogoCache,
   print,
   savePdfToFile,
+  // Test print
+  buildTestReceiptHtml,
+  printHtmlDirect,
+  saveTestPdf,
   // Legacy (keep existing IPC channels working)
   getPrinters,
   printCustomer,

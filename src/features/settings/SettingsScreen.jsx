@@ -5,6 +5,7 @@ import {
   settingsSet,
   settingsOpenLogsFolder,
   printGetPrinters,
+  printTestPrint,
   authChangePassword,
   backupChooseFolder,
   backupNow,
@@ -49,7 +50,8 @@ export default function SettingsScreen() {
   const [printers,     setPrinters]     = useState([]);
   const [printerName,  setPrinterName]  = useState('');
   const [paperWidth,   setPaperWidth]   = useState('80');
-  const [loadingPrint, setLoadingPrint] = useState(false);
+  const [loadingPrint,   setLoadingPrint]   = useState(false);
+  const [testPrinting,   setTestPrinting]   = useState(false);
 
   // Change password
   const [pwModal,   setPwModal]   = useState(false);
@@ -352,8 +354,31 @@ export default function SettingsScreen() {
           <Button onClick={savePrinter} disabled={saving}>
             <Icon name="check" size={16} /> {ar.save}
           </Button>
-          <Button variant="secondary" onClick={() => printGetPrinters()}>
+          <Button
+            variant="secondary"
+            onClick={async () => {
+              setTestPrinting(true);
+              const res = await printTestPrint({ deviceName: printerName || undefined });
+              setTestPrinting(false);
+              if (!res.ok) flash(res.error ?? ar.testPrintFailed, 'error');
+              else         flash(ar.testPrintSuccess, 'success');
+            }}
+            disabled={testPrinting}
+          >
             <Icon name="print" size={16} /> {ar.testPrint}
+          </Button>
+          <Button
+            variant="ghost"
+            onClick={async () => {
+              setTestPrinting(true);
+              const res = await printTestPrint({ savePdf: true });
+              setTestPrinting(false);
+              if (!res.ok)          flash(res.error ?? ar.unknownError, 'error');
+              else if (res.data?.saved) flash(ar.pdfSaved, 'success');
+            }}
+            disabled={testPrinting}
+          >
+            {ar.testPrintSavePdf}
           </Button>
         </div>
       </Section>
