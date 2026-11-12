@@ -6,6 +6,25 @@ Dates: DD/MM/YYYY. Versions: [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] – 12/11/2026
+
+### Added (مضاف)
+- **تقارير تفصيلية كاملة** (Item 3): شاشة التقارير تعرض كل قسم في بطاقة قابلة للطي: ملخص، حسب اليوم، حسب نوع الطلب، قائمة الطلبات مع تفاصيل الأصناف والأحجام وسجل التعديلات عند النقر، الطلبات الملغية منفصلة، مشتريات الموردين بكل فاتورة، المصروفات الأخرى سطراً بسطر، رواتب العمال. رسومان بيانيان SVG: المبيعات اليومية والمبيعات حسب النوع. تصدير Excel بورقة لكل قسم وتصدير PDF بنفس التفصيل.
+- **طباعة تجريبية** (Item 9): زر "طباعة تجريبية" في الإعدادات يطبع وصلاً تجريبياً فعلياً إلى الطابعة المختارة ويُظهر toast نجاح أو رسالة الخطأ الحقيقية بالعربية. زر إضافي "حفظ تجربة PDF".
+- **DateInput في المصروفات والموردين**: كل حقول التاريخ في شاشة المصروفات (فلتر + نموذج) وشاشة الموردين (تاريخ الفاتورة) استُبدلت بمكوّن DateInput لضمان DD/MM/YYYY دائماً.
+
+### Fixed (تصحيح)
+- **أيقونة رواتب العمال**: إضافة `BiGroup` إلى خريطة الأيقونات لمفتاح التنقل `workersPay` (كان يُظهر تحذير "unknown icon name").
+- **ألوان CSS**: استبدال القيم الاحتياطية الثابتة `var(--color-warning, #b45309)` بـ`var(--color-warning)` في ReportsScreen.module.css.
+
+### Technical Notes
+- `electron/services/reports.js`: إضافة `queryByDay`, `queryOrdersList`, `queryCancelledOrders`, `queryWorkersPay` مع حماية من غياب جدول `worker_payments`.
+- `electron/services/excelExport.js`: ورقة لكل قسم (10 أوراق).
+- `electron/services/pdfExport.js`: نفس الأقسام + تواريخ DD/MM/YYYY عبر `fmtDate`.
+- `electron/services/printing.js`: إضافة `buildTestReceiptHtml`, `printHtmlDirect`, `saveTestPdf`.
+
+---
+
 ## [1.1.0] – 30/07/2025
 
 ### Added (مضاف)
@@ -41,5 +60,6 @@ Dates: DD/MM/YYYY. Versions: [Semantic Versioning](https://semver.org/).
 
 الإصدار الأول من تطبيق "فاست فود رائد" – نقطة بيع مكتبية للويندوز.
 
+[1.2.0]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ayadseghairi/raid-fast-food/releases/tag/v1.0.0

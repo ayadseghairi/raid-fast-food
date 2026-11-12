@@ -451,7 +451,7 @@ export default function SettingsScreen() {
       <Section title="حول البرنامج">
         <div className={styles.aboutRow}>
           <span>{ar.appName}</span>
-          <span className={styles.aboutVersion}>v1.1.0</span>
+          <span className={styles.aboutVersion}>v1.2.0</span>
         </div>
         <div className={styles.actions}>
           <Button variant="ghost" onClick={async () => { await settingsOpenLogsFolder(); }}>
