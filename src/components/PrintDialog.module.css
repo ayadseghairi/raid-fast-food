@@ -63,9 +63,9 @@
   font-size: var(--font-size-sm);
 }
 
-/* Paper strip container: white, shadow, centred */
+/* Paper strip container: receipt preview background, shadow, centred */
 .paperStrip {
-  background: #fff;
+  background: var(--color-surface-raised);
   box-shadow: var(--shadow-md);
   border-radius: 2px;
   overflow: hidden;

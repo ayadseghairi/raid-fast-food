@@ -103,6 +103,10 @@ handle('products:update', (payload) => {
   return toRendererProduct(row);
 });
 
+handle('products:computeUnitPrice', ({ basePrice, sizePriceMode, sizePrice }) => {
+  return { price: svc.computeUnitPrice({ basePrice, sizePriceMode, sizePrice }) };
+});
+
 handle('products:delete', ({ id }) => {
   svc.deleteProduct(requireId(id));
   return { done: true };

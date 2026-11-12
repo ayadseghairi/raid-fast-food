@@ -123,6 +123,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--color-text);
 }
 .tilePrice {
   font-size: var(--font-size-sm);
@@ -227,9 +228,24 @@
   gap: var(--space-1);
 }
 .cartRowMain { display: flex; flex-direction: column; gap: 2px; }
-.cartItemName { font-size: var(--font-size-sm); font-weight: 700; }
+.cartItemName { font-size: var(--font-size-sm); font-weight: 700; color: var(--color-text); }
+.cartItemSize { font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600; }
 .cartItemOpts { font-size: var(--font-size-xs); color: var(--color-secondary); }
 .cartItemNote { font-size: var(--font-size-xs); color: var(--color-text-muted); font-style: italic; }
+.changeSizeBtn {
+  font-size: var(--font-size-xs);
+  color: var(--color-secondary);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 1px 6px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  margin-top: 2px;
+  align-self: flex-start;
+  transition: border-color var(--transition-fast);
+}
+.changeSizeBtn:hover { border-color: var(--color-secondary); }
 
 .cartRowControls {
   display: flex;

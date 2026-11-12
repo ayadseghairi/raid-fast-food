@@ -28,7 +28,7 @@ const ar = {
 
   // ── Login ───────────────────────────────────────────────────────
   loginTitle: 'تسجيل الدخول',
-  loginCashier: 'دخول الكاشير',
+  loginCashier: 'دخول البائع',
   loginOwner: 'دخول المالك',
   password: 'كلمة المرور',
   passwordPlaceholder: 'أدخل كلمة المرور',
@@ -89,6 +89,15 @@ const ar = {
   customize: 'تخصيص',
   removeCustomization: 'إزالة التخصيص',
   removeItem: 'حذف الصنف',
+  chooseSizeTitle: 'اختر الحجم',
+  chooseSizeHint: 'اختر الحجم',
+  sizeRequired: 'يجب اختيار حجم قبل الإضافة للسلة',
+  changeSize: 'تغيير الحجم',
+  fromPrice: 'من',
+  priceFullMode: 'سعر كامل',
+  priceDeltaMode: 'زيادة على السعر الأساسي',
+  sizePriceMode: 'طريقة تسعير الأحجام',
+  basePrice: 'السعر الأساسي',
 
   // ── Delivery form ───────────────────────────────────────────────
   customerName: 'اسم العميل',
@@ -181,6 +190,27 @@ const ar = {
   expenseCategorySalary: 'رواتب',
   expenseCategoryMaintenance: 'صيانة',
   expenseCategoryOther: 'أخرى',
+
+  // ── Workers' Pay ────────────────────────────────────────────────
+  workersPayTitle: 'رواتب العمال',
+  workerName: 'اسم العامل',
+  addWorker: 'إضافة عامل',
+  editWorker: 'تعديل عامل',
+  deactivateWorker: 'إيقاف العامل',
+  reactivateWorker: 'إعادة تفعيل',
+  workerDeactivated: 'تم إيقاف العامل',
+  workerReactivated: 'تم إعادة التفعيل',
+  dailyPayEntry: 'إدخال الراتب اليومي',
+  dailyDate: 'التاريخ',
+  workerPayAmount: 'المبلغ',
+  dailyTotal: 'إجمالي اليوم',
+  savePayments: 'حفظ',
+  paymentsSaved: 'تم حفظ المدفوعات',
+  workerSummary: 'ملخص العمال',
+  daysPaid: 'أيام الدفع',
+  totalPaid: 'إجمالي المدفوع',
+  workerDayDetail: 'تفصيل الأيام',
+  manageWorkers: 'إدارة العمال',
 
   // ── Day Close ───────────────────────────────────────────────────
   closeDayTitle: 'إغلاق اليوم',
@@ -321,6 +351,7 @@ const ar = {
   pdfSaved: 'تم حفظ الملف',
 
   // ── Danger zone ─────────────────────────────────────────────────
+  openLogsFolder: 'فتح مجلد السجلات',
   dangerZone: 'منطقة الخطر',
   dangerZoneHint: 'هذه الإجراءات لا يمكن التراجع عنها. تأكد من أخذ نسخة احتياطية قبل المتابعة.',
   clearTransactions: 'حذف سجل المعاملات',

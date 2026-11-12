@@ -2,6 +2,7 @@
 
 const { app, BrowserWindow } = require('electron');
 const path = require('node:path');
+const logger = require('./utils/logger.js');
 
 // Disable Chromium telemetry / crash-reporter features
 app.commandLine.appendSwitch('disable-features', 'Reporting');
@@ -74,6 +75,18 @@ app.on('second-instance', () => {
 // ── App lifecycle ─────────────────────────────────────────────────────
 
 app.whenReady().then(() => {
+  // Initialise logger now that userData path is available
+  logger.init(app.getPath('userData'));
+  logger.info('App starting', { version: app.getVersion(), platform: process.platform });
+
+  // Global error handlers
+  process.on('uncaughtException', (err) => {
+    logger.error('uncaughtException', err);
+  });
+  process.on('unhandledRejection', (reason) => {
+    logger.error('unhandledRejection', reason instanceof Error ? reason : String(reason));
+  });
+
   // Register IPC handlers (each file self-registers on require)
   require('./ipc/setup.js');
   require('./ipc/auth.js');
@@ -86,6 +99,7 @@ app.whenReady().then(() => {
   require('./ipc/reports.js');
   require('./ipc/backup.js');
   require('./ipc/data.js');
+  require('./ipc/workers.js');
 
   createWindow();
 

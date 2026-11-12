@@ -1,12 +1,14 @@
 'use strict';
 
 /**
- * IPC: settings:get, settings:set
+ * IPC: settings:get, settings:set, settings:openLogsFolder
  */
 
 const { handle } = require('./_handle.js');
 const { AppError } = require('../utils/errors.js');
 const { getAllSettings, setManySettings } = require('../repositories/settings.js');
+const { shell } = require('electron');
+const logger = require('../utils/logger.js');
 
 const ALLOWED_KEYS = new Set([
   'restaurant_name',
@@ -33,5 +35,12 @@ handle('settings:set', (payload) => {
     if (!ALLOWED_KEYS.has(k)) throw new AppError(`مفتاح إعداد غير مسموح: ${k}`);
   }
   setManySettings(Object.fromEntries(entries));
+  return { done: true };
+});
+
+handle('settings:openLogsFolder', () => {
+  const dir = logger.getLogDir();
+  if (!dir) throw new AppError('مجلد السجلات غير متاح');
+  shell.openPath(dir);
   return { done: true };
 });

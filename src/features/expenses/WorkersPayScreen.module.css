@@ -1,0 +1,258 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  padding: var(--space-4) var(--space-6);
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.tab {
+  flex: 1;
+  height: 44px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+.tab:hover { color: var(--color-text); }
+.tabActive {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+}
+
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6);
+}
+
+/* ── Daily entry ─────────────────────────────────────────────────── */
+.dailyWrap {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.datePicker { max-width: 200px; }
+
+.workerList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.workerRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.workerNameText {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.amountBtn {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  font-family: var(--font-family);
+  min-width: 100px;
+  text-align: center;
+  transition: border-color var(--transition-fast);
+}
+.amountBtn:hover { border-color: var(--color-primary); }
+
+.dailyTotalRow {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border-top: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+}
+.dailyTotalAmt { color: var(--color-primary); }
+
+.successMsg {
+  color: var(--color-success);
+  font-size: var(--font-size-sm);
+  margin: 0;
+}
+
+.noWorkers {
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-8);
+}
+
+/* ── Manage workers ──────────────────────────────────────────────── */
+.workersManage {
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.workersHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.workersCount {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.workerCards {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.workerCard {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.workerCardInactive {
+  opacity: 0.55;
+}
+
+.workerCardName {
+  font-size: var(--font-size-base);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.workerCardActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.wCardBtn {
+  font-size: var(--font-size-sm);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-1) var(--space-3);
+  cursor: pointer;
+  font-family: var(--font-family);
+  color: var(--color-text);
+  transition: background var(--transition-fast);
+}
+.wCardBtn:hover { background: var(--color-primary-light); border-color: var(--color-primary); }
+.wCardBtnDanger { color: var(--color-danger); }
+.wCardBtnDanger:hover { background: var(--color-danger-light); border-color: var(--color-danger); }
+.wCardBtnSuccess { color: var(--color-success); }
+.wCardBtnSuccess:hover { background: var(--color-success-light); border-color: var(--color-success); }
+
+/* ── Summary ─────────────────────────────────────────────────────── */
+.summaryWrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.summaryFilters {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.summaryTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+
+.summaryTable th {
+  text-align: right;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+.summaryTable td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.summaryRow {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.summaryRow:hover { background: var(--color-surface); }
+
+.summaryTotalRow td {
+  font-weight: 700;
+  border-top: 2px solid var(--color-border);
+  color: var(--color-text);
+}
+
+.detailTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.detailTable th {
+  text-align: right;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+.detailTable td {
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+}

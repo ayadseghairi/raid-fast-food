@@ -15,9 +15,10 @@ import { customerReceipt, kitchenReceipt, combinedPdfReceipt, cancellationReceip
 // ── Import pageSizeForWidth via a thin stub ────────────────────────
 // We cannot `require` printing.js because it calls `require('electron')`.
 // Instead we inline the same logic here and test it in isolation.
+// Keep this in sync with electron/services/printing.js pageSizeForWidth.
 function pageSizeForWidth(widthMm) {
-  if (widthMm === 210) return { width: 210000, height: 297000 };
-  return undefined;
+  if (widthMm === 210) return { width: 210_000, height: 297_000 };
+  return { width: widthMm * 1000, height: 10_000_000 };
 }
 
 // ── Shared fixtures ────────────────────────────────────────────────
@@ -56,15 +57,17 @@ const SETTINGS = {
 describe('pageSizeForWidth', () => {
   it('returns A4 microns for 210mm', () => {
     const size = pageSizeForWidth(210);
-    expect(size).toEqual({ width: 210000, height: 297000 });
+    expect(size).toEqual({ width: 210_000, height: 297_000 });
   });
 
-  it('returns undefined for 80mm (thermal – use @page CSS)', () => {
-    expect(pageSizeForWidth(80)).toBeUndefined();
+  it('returns 80mm width in microns for thermal 80mm', () => {
+    const size = pageSizeForWidth(80);
+    expect(size).toEqual({ width: 80_000, height: 10_000_000 });
   });
 
-  it('returns undefined for 58mm', () => {
-    expect(pageSizeForWidth(58)).toBeUndefined();
+  it('returns 58mm width in microns for thermal 58mm', () => {
+    const size = pageSizeForWidth(58);
+    expect(size).toEqual({ width: 58_000, height: 10_000_000 });
   });
 });
 
@@ -83,6 +86,19 @@ describe('customerReceipt', () => {
 
   it('contains restaurant name', () => {
     expect(build()).toContain('فاست فود رائد');
+  });
+
+  it('embeds logo data URI when logoDataUrl provided', () => {
+    const html = customerReceipt({
+      order: ORDER, items: ITEMS, settings: SETTINGS,
+      logoDataUrl: 'data:image/jpeg;base64,AAAA',
+    });
+    expect(html).toContain('data:image/jpeg;base64,AAAA');
+  });
+
+  it('no <img> tag when logoDataUrl is null', () => {
+    const html = customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS, logoDataUrl: null });
+    expect(html).not.toContain('<img class="logo"');
   });
 
   it('contains order number', () => {

@@ -20,6 +20,7 @@ export const setupComplete = (data) => call('setup:complete', data);
 // ── Settings ────────────────────────────────────────────────────
 export const settingsGet = () => call('settings:get', {});
 export const settingsSet = (data) => call('settings:set', data);
+export const settingsOpenLogsFolder = () => call('settings:openLogsFolder', {});
 
 // ── Categories ──────────────────────────────────────────────────
 export const categoriesList = () => call('categories:list', {});
@@ -34,6 +35,8 @@ export const productsUpdate = (id, data) => call('products:update', { id, ...dat
 export const productsDelete = (id) => call('products:delete', { id });
 export const productsSetActive = (id, active) => call('products:setActive', { id, active });
 export const productsPickImage = () => call('products:pickImage', {});
+export const productsComputeUnitPrice = (basePrice, sizePriceMode, sizePrice) =>
+  call('products:computeUnitPrice', { basePrice, sizePriceMode, sizePrice });
 
 // ── Product options (sizes/extras) ──────────────────────────────
 export const optionsList = (productId) => call('options:list', { productId });
@@ -108,6 +111,17 @@ export const backupRestore = (filePath, ownerPassword) =>
   call('backup:restore', { filePath, ownerPassword });
 export const backupChooseFolder = () => call('backup:chooseFolder', {});
 export const backupList = () => call('backup:list', {});
+
+// ── Workers (رواتب العمال) ────────────────────────────────────────
+export const workersList = (activeOnly = false) => call('workers:list', { activeOnly });
+export const workersCreate = (name) => call('workers:create', { name });
+export const workersUpdate = (id, name) => call('workers:update', { id, name });
+export const workersSetActive = (id, active) => call('workers:setActive', { id, active });
+export const workersGetDailyEntry = (date) => call('workers:getDailyEntry', { date });
+export const workersSaveDailyPayments = (date, payments) => call('workers:saveDailyPayments', { date, payments });
+export const workersSummaryForRange = (from, to) => call('workers:summaryForRange', { from, to });
+export const workersDetailForRange = (workerId, from, to) => call('workers:detailForRange', { workerId, from, to });
+export const workersTotalPayForRange = (from, to) => call('workers:totalPayForRange', { from, to });
 
 // ── Danger zone ──────────────────────────────────────────────────
 export const dataClearTransactions = (password) =>

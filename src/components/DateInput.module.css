@@ -1,0 +1,151 @@
+.container {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.inputRow {
+  display: flex;
+  align-items: center;
+}
+
+.input {
+  flex: 1;
+  height: var(--btn-height-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md) 0 0 var(--radius-md);
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  padding: 0 var(--space-3);
+  text-align: left;
+  direction: ltr;
+  width: 100%;
+  outline: none;
+  transition: border-color var(--transition-fast);
+}
+.input:focus { border-color: var(--color-primary); }
+
+.calBtn {
+  height: var(--btn-height-sm);
+  width: var(--btn-height-sm);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-right: none;
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--transition-fast);
+  flex-shrink: 0;
+}
+.calBtn:hover:not(:disabled) { background: var(--color-primary-light); }
+.calBtn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ── Popover ─────────────────────────────────────────────────────── */
+.popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 200;
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-3);
+  min-width: 240px;
+}
+
+.calHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.calTitle {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  text-align: center;
+  flex: 1;
+}
+
+.navBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: transparent;
+  cursor: pointer;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text);
+  transition: background var(--transition-fast);
+}
+.navBtn:hover { background: var(--color-surface); }
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.dayHeader {
+  font-size: 10px;
+  text-align: center;
+  color: var(--color-text-muted);
+  padding: 2px 0;
+}
+
+.day {
+  height: 30px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  font-size: var(--font-size-sm);
+  font-family: var(--font-family);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.day:hover:not(:disabled) { background: var(--color-primary-light); }
+.daySelected {
+  background: var(--color-primary) !important;
+  color: #fff;
+  font-weight: 700;
+}
+.dayToday {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.dayDisabled { opacity: 0.3; cursor: not-allowed; }
+
+.calFooter {
+  margin-top: var(--space-2);
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-2);
+  text-align: center;
+}
+
+.todayBtn {
+  font-size: var(--font-size-sm);
+  color: var(--color-secondary);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: var(--font-family);
+  text-decoration: underline;
+}

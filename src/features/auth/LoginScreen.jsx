@@ -125,6 +125,7 @@ export default function LoginScreen() {
           </form>
         )}
       </div>
+      <div className={styles.versionFooter}>v1.1.0</div>
     </div>
   );
 }

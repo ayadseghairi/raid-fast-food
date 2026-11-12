@@ -3,6 +3,7 @@ import ar from '../../i18n/ar.js';
 import {
   settingsGet,
   settingsSet,
+  settingsOpenLogsFolder,
   printGetPrinters,
   authChangePassword,
   backupChooseFolder,
@@ -417,6 +418,19 @@ export default function SettingsScreen() {
         <div className={styles.actions}>
           <Button variant="secondary" onClick={() => setPwModal(true)}>
             <Icon name="key" size={16} /> {ar.changePassword}
+          </Button>
+        </div>
+      </Section>
+
+      {/* ── About / version ─────────────────────────────────── */}
+      <Section title="حول البرنامج">
+        <div className={styles.aboutRow}>
+          <span>{ar.appName}</span>
+          <span className={styles.aboutVersion}>v1.1.0</span>
+        </div>
+        <div className={styles.actions}>
+          <Button variant="ghost" onClick={async () => { await settingsOpenLogsFolder(); }}>
+            {ar.openLogsFolder}
           </Button>
         </div>
       </Section>

@@ -162,6 +162,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: var(--color-text);
 }
 
 .cardPrice {
@@ -218,6 +219,7 @@
 
 /* Image picker */
 .imagePicker {
+  position: relative;
   height: 140px;
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
@@ -314,3 +316,61 @@
 .addOptType { width: 100px; }
 .addOptLabel { flex: 1; }
 .addOptPrice { width: 80px; }
+
+/* ── Image remove button ─────────────────────────────────────────── */
+.removeImageBtn {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  background: rgba(0,0,0,0.6);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  transition: background var(--transition-fast);
+}
+.removeImageBtn:hover { background: var(--color-danger); }
+
+/* ── Size mode toggle ────────────────────────────────────────────── */
+.sizeModeRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.sizeModeLabel {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.sizeModeToggle {
+  display: flex;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.sizeModeBtn {
+  flex: 1;
+  height: 38px;
+  background: transparent;
+  border: none;
+  font-family: var(--font-family);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.sizeModeBtn + .sizeModeBtn {
+  border-right: 1px solid var(--color-border);
+}
+.sizeModeBtnActive {
+  background: var(--color-primary);
+  color: #fff;
+}

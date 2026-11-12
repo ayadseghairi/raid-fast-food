@@ -62,10 +62,10 @@
   background: var(--color-info-light); color: var(--color-info);
   white-space: nowrap;
 }
-.cat_electricity { background: #fff3cd; color: #856404; }
+.cat_electricity { background: var(--color-warning-light); color: var(--color-warning); }
 .cat_rent        { background: var(--color-info-light); color: var(--color-info); }
 .cat_salary      { background: var(--color-success-light); color: var(--color-success); }
-.cat_maintenance { background: var(--color-warning-light); color: #856404; }
+.cat_maintenance { background: var(--color-warning-light); color: var(--color-warning); }
 .cat_other       { background: var(--color-surface); color: var(--color-text-muted); border: 1px solid var(--color-border); }
 
 .rowName { font-size: var(--font-size-sm); font-weight: 600; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

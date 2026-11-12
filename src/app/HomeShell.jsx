@@ -12,6 +12,7 @@ const OrdersScreen    = React.lazy(() => import('../features/orders/OrdersScreen
 const ProductsScreen  = React.lazy(() => import('../features/products/ProductsScreen.jsx'));
 const SuppliersScreen = React.lazy(() => import('../features/suppliers/SuppliersScreen.jsx'));
 const ExpensesScreen  = React.lazy(() => import('../features/expenses/ExpensesScreen.jsx'));
+const WorkersPayScreen = React.lazy(() => import('../features/expenses/WorkersPayScreen.jsx'));
 const ReportsScreen   = React.lazy(() => import('../features/reports/ReportsScreen.jsx'));
 const SettingsScreen  = React.lazy(() => import('../features/settings/SettingsScreen.jsx'));
 const CloseDayScreen  = React.lazy(() => import('../features/day-close/CloseDayScreen.jsx'));
@@ -19,29 +20,31 @@ const CloseDayScreen  = React.lazy(() => import('../features/day-close/CloseDayS
 /** Menu items available to each role */
 const MENU = {
   cashier: ['pos', 'orders'],
-  owner:   ['pos', 'orders', 'products', 'suppliers', 'expenses', 'reports', 'settings', 'closeDay'],
+  owner:   ['pos', 'orders', 'products', 'suppliers', 'expenses', 'workersPay', 'reports', 'settings', 'closeDay'],
 };
 
 const SCREEN_MAP = {
-  pos:       PosScreen,
-  orders:    OrdersScreen,
-  products:  ProductsScreen,
-  suppliers: SuppliersScreen,
-  expenses:  ExpensesScreen,
-  reports:   ReportsScreen,
-  settings:  SettingsScreen,
-  closeDay:  CloseDayScreen,
+  pos:        PosScreen,
+  orders:     OrdersScreen,
+  products:   ProductsScreen,
+  suppliers:  SuppliersScreen,
+  expenses:   ExpensesScreen,
+  workersPay: WorkersPayScreen,
+  reports:    ReportsScreen,
+  settings:   SettingsScreen,
+  closeDay:   CloseDayScreen,
 };
 
 const NAV_LABELS = {
-  pos:       ar.pos,
-  orders:    ar.orders,
-  products:  ar.products,
-  suppliers: ar.suppliers,
-  expenses:  ar.expenses,
-  reports:   ar.reports,
-  settings:  ar.settingsTitle,
-  closeDay:  ar.closeDay,
+  pos:        ar.pos,
+  orders:     ar.orders,
+  products:   ar.products,
+  suppliers:  ar.suppliers,
+  expenses:   ar.expenses,
+  workersPay: ar.workersPayTitle,
+  reports:    ar.reports,
+  settings:   ar.settingsTitle,
+  closeDay:   ar.closeDay,
 };
 
 export default function HomeShell() {

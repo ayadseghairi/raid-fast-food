@@ -35,6 +35,13 @@ export default [
       'no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
       'react/prop-types': 'off',
       'react/react-in-jsx-scope': 'off',
+      // Item 7: ban locale-aware date formatting — use src/utils/money.js helpers instead
+      'no-restricted-properties': [
+        'error',
+        { object: 'Date', property: 'toLocaleDateString', message: 'Use fmtDate() from src/utils/money.js or electron/utils/dates.js' },
+        { object: 'Date', property: 'toLocaleString',     message: 'Use fmtDateTime() from src/utils/money.js or electron/utils/dates.js' },
+        { object: 'Date', property: 'toLocaleTimeString', message: 'Use fmtDate/fmtDateTime from utils/dates.js' },
+      ],
     },
   },
 ];

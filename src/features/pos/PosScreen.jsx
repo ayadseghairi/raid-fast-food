@@ -5,6 +5,7 @@ import {
   ordersCreate, dayGetCurrent,
   customerLookup,
   settingsGet,
+  optionsList,
 } from '../../api/index.js';
 import { format, toMinor, fromMinor } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
@@ -13,6 +14,7 @@ import Modal from '../../components/Modal.jsx';
 import NumPad from '../../components/NumPad.jsx';
 import FormField from '../../components/FormField.jsx';
 import PrintDialog from '../../components/PrintDialog.jsx';
+import SizePickerModal from '../../components/SizePickerModal.jsx';
 import styles from './PosScreen.module.css';
 
 // ── Order types ───────────────────────────────────────────────────
@@ -22,12 +24,24 @@ const ORDER_TYPES = [
   { key: 'delivery',  label: ar.delivery },
 ];
 
+/**
+ * Compute final unit price (mirrors electron/services/products.js computeUnitPrice).
+ * @param {number} basePrice - product.price in minor units
+ * @param {string} sizePriceMode - 'absolute'|'delta'
+ * @param {number} sizePrice - size option price in minor units
+ * @returns {number}
+ */
+function computeUnitPrice(basePrice, sizePriceMode, sizePrice) {
+  if (sizePriceMode === 'absolute') return sizePrice;
+  return basePrice + sizePrice;
+}
+
 export default function PosScreen() {
   // ── State ──────────────────────────────────────────────────────
   const [categories, setCategories] = useState([]);
   const [activeCat, setActiveCat] = useState(null);
   const [products, setProducts] = useState([]);
-  const [cart, setCart] = useState([]);                    // [{...product, qty, options, note, cartId}]
+  const [cart, setCart] = useState([]);                    // [{...product, qty, options, note, cartId, sizeName, finalUnitPrice}]
   const [orderType, setOrderType] = useState('dine_in');
   const [deliveryFee, setDeliveryFee] = useState('0');
   const [defaultFee, setDefaultFee] = useState(0);        // minor units from settings
@@ -36,6 +50,7 @@ export default function PosScreen() {
 
   // Modals
   const [customizeItem, setCustomizeItem] = useState(null); // cart item being customized
+  const [sizePicker, setSizePicker] = useState(null);       // { product, sizes, onPick }
   const [feeModal, setFeeModal] = useState(false);
   const [completeModal, setCompleteModal] = useState(false);
   const [printModal, setPrintModal] = useState(false);
@@ -54,7 +69,6 @@ export default function PosScreen() {
         setCategories(catRes.data);
         setActiveCat(catRes.data[0].id);
       }
-      // dayRes used for receipt tracking in future phases
       if (setRes.ok) {
         const fee = setRes.data.delivery_fee_default;
         if (fee) {
@@ -85,27 +99,62 @@ export default function PosScreen() {
   // ── Cart helpers ───────────────────────────────────────────────
   const cartTotal = cart.reduce((s, item) => {
     const optExtra = item.options.reduce((os, o) => os + o.price, 0);
-    return s + (item.price + optExtra) * item.qty;
+    return s + (item.finalUnitPrice + optExtra) * item.qty;
   }, 0);
   const feeMinor = toMinor(deliveryFee);
   const grandTotal = cartTotal + feeMinor;
 
-  function addToCart(product) {
+  /**
+   * Add a product to the cart.
+   * If the product has sizes, open the SizePickerModal first.
+   * If no size is chosen (modal closed), nothing is added.
+   */
+  async function addToCart(product) {
+    // Load options to check for sizes
+    const res = await optionsList(product.id);
+    if (!res.ok) return;
+    const allOptions = res.data;
+    const sizes = allOptions.filter(o => o.type === 'size');
+
+    if (sizes.length > 0) {
+      // Must pick a size before adding
+      setSizePicker({
+        product,
+        sizes,
+        onPick: (size, finalPrice) => {
+          setSizePicker(null);
+          doAddToCart(product, size, finalPrice, allOptions.filter(o => o.type === 'extra'));
+        },
+      });
+    } else {
+      // No sizes – add directly
+      doAddToCart(product, null, product.price, []);
+    }
+  }
+
+  function doAddToCart(product, size, finalUnitPrice, _availableExtras) {
     setCart(prev => {
-      // Check if same product with no options already in cart → increment qty
-      const existing = prev.findIndex(
-        i => i.product_id === product.id && i.options.length === 0 && !i.note,
-      );
-      if (existing >= 0) {
-        const updated = [...prev];
-        updated[existing] = { ...updated[existing], qty: updated[existing].qty + 1 };
-        return updated;
+      // Increment qty only if no size, no options, no note
+      if (!size) {
+        const existing = prev.findIndex(
+          i => i.product_id === product.id && !i.sizeName && i.options.length === 0 && !i.note,
+        );
+        if (existing >= 0) {
+          const updated = [...prev];
+          updated[existing] = { ...updated[existing], qty: updated[existing].qty + 1 };
+          return updated;
+        }
       }
       return [...prev, {
         cartId: Date.now() + Math.random(),
         product_id: product.id,
         product_name: product.name,
-        price: product.price,      // minor units
+        price: product.price,            // base price (minor units)
+        finalUnitPrice,                  // computed final price (minor units)
+        size_price_mode: product.size_price_mode ?? 'absolute',
+        sizeName: size?.label ?? null,
+        sizeOptionId: size?.id ?? null,
+        sizeOptionPrice: size?.price ?? null,
         qty: 1,
         options: [],
         note: '',
@@ -158,14 +207,21 @@ export default function PosScreen() {
     setBusy(true);
     setError('');
 
-    const items = cart.map(item => ({
-      product_id: item.product_id,
-      product_name: item.product_name,
-      unit_price: item.price,
-      qty: item.qty,
-      options: item.options,
-      note: item.note,
-    }));
+    const items = cart.map(item => {
+      // Build options array: size option (as snapshot) + extras
+      const sizeOpt = item.sizeName
+        ? [{ id: item.sizeOptionId, label: item.sizeName, price: item.sizeOptionPrice ?? 0, type: 'size' }]
+        : [];
+      const extraOpts = item.options.filter(o => o.type !== 'size');
+      return {
+        product_id: item.product_id,
+        product_name: item.product_name + (item.sizeName ? ` — ${item.sizeName}` : ''),
+        unit_price: item.finalUnitPrice,   // FINAL price at time of sale
+        qty: item.qty,
+        options: [...sizeOpt, ...extraOpts],
+        note: item.note,
+      };
+    });
 
     const res = await ordersCreate({
       order_type: orderType,
@@ -179,8 +235,8 @@ export default function PosScreen() {
     setBusy(false);
     if (res.ok) {
       setCompleteModal(false);
-      setLastOrder(res.data);   // store for print step
-      setPrintModal(true);      // open print dialog
+      setLastOrder(res.data);
+      setPrintModal(true);
     } else {
       setError(res.error ?? ar.unknownError);
     }
@@ -214,18 +270,12 @@ export default function PosScreen() {
         {/* Product grid */}
         <div className={styles.prodGrid}>
           {products.map(p => (
-            <button key={p.id} className={styles.prodTile} onClick={() => addToCart(p)}>
-              <div className={styles.tileImg}>
-                {p.image_url
-                  ? <img src={p.image_url} alt={p.name} />
-                  : <Icon name="image" size={28} className={styles.tileNoImg} />
-                }
-              </div>
-              <div className={styles.tileBody}>
-                <span className={styles.tileName}>{p.name}</span>
-                <span className={styles.tilePrice}>{format(p.price)}</span>
-              </div>
-            </button>
+            <ProductTile
+              key={p.id}
+              product={p}
+              onClick={addToCart}
+              computeUnitPrice={computeUnitPrice}
+            />
           ))}
           {products.length === 0 && (
             <p className={styles.emptyHint}>{ar.noData}</p>
@@ -292,6 +342,28 @@ export default function PosScreen() {
               onQtyChange={(delta) => changeQty(item.cartId, delta)}
               onRemove={() => removeFromCart(item.cartId)}
               onCustomize={() => setCustomizeItem(item)}
+              onChangeSize={async () => {
+                // Reopen size picker for this item
+                const res = await optionsList(item.product_id);
+                if (!res.ok) return;
+                const sizes = res.data.filter(o => o.type === 'size');
+                if (!sizes.length) return;
+                // Get fresh product data from current products list
+                const prod = products.find(p => p.id === item.product_id);
+                if (!prod) return;
+                setSizePicker({
+                  product: prod,
+                  sizes,
+                  onPick: (size, finalPrice) => {
+                    setSizePicker(null);
+                    setCart(prev => prev.map(i =>
+                      i.cartId === item.cartId
+                        ? { ...i, sizeName: size.label, sizeOptionId: size.id, sizeOptionPrice: size.price, finalUnitPrice: finalPrice }
+                        : i,
+                    ));
+                  },
+                });
+              }}
             />
           ))}
         </div>
@@ -329,6 +401,16 @@ export default function PosScreen() {
           </Button>
         </div>
       </div>
+
+      {/* ── Size picker modal ────────────────────────────────────── */}
+      {sizePicker && (
+        <SizePickerModal
+          product={sizePicker.product}
+          sizes={sizePicker.sizes}
+          onPick={sizePicker.onPick}
+          onClose={() => setSizePicker(null)}
+        />
+      )}
 
       {/* ── Delivery fee numpad modal ───────────────────────────── */}
       <Modal open={feeModal} title={ar.deliveryFee} onClose={() => setFeeModal(false)} size="sm">
@@ -384,21 +466,71 @@ export default function PosScreen() {
   );
 }
 
+// ── ProductTile ────────────────────────────────────────────────────
+/**
+ * Lazy-loads options to show "من <price>" for sized products.
+ */
+function ProductTile({ product, onClick, computeUnitPrice: computeFn }) {
+  const [displayInfo, setDisplayInfo] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    optionsList(product.id).then(res => {
+      if (cancelled || !res.ok) return;
+      const sizes = res.data.filter(o => o.type === 'size');
+      if (sizes.length > 0) {
+        const prices = sizes.map(s => computeFn(product.price, product.size_price_mode ?? 'absolute', s.price));
+        setDisplayInfo({ hasSizes: true, lowestPrice: Math.min(...prices) });
+      } else {
+        setDisplayInfo({ hasSizes: false });
+      }
+    });
+    return () => { cancelled = true; };
+  }, [product.id, product.price, product.size_price_mode, computeFn]);
+
+  const priceDisplay = displayInfo?.hasSizes
+    ? `${ar.fromPrice} ${format(displayInfo.lowestPrice)} ${ar.currency}`
+    : `${format(product.price)} ${ar.currency}`;
+
+  return (
+    <button key={product.id} className={styles.prodTile} onClick={() => onClick(product)}>
+      <div className={styles.tileImg}>
+        {product.image_url
+          ? <img src={product.image_url} alt={product.name} />
+          : <Icon name="image" size={28} className={styles.tileNoImg} />
+        }
+      </div>
+      <div className={styles.tileBody}>
+        <span className={styles.tileName}>{product.name}</span>
+        <span className={styles.tilePrice}>{priceDisplay}</span>
+      </div>
+    </button>
+  );
+}
+
 // ── CartRow ────────────────────────────────────────────────────────
-function CartRow({ item, onQtyChange, onRemove, onCustomize }) {
-  const optExtra = item.options.reduce((s, o) => s + o.price, 0);
-  const lineTotal = (item.price + optExtra) * item.qty;
+function CartRow({ item, onQtyChange, onRemove, onCustomize, onChangeSize }) {
+  const optExtra = item.options.filter(o => o.type !== 'size').reduce((s, o) => s + o.price, 0);
+  const lineTotal = (item.finalUnitPrice + optExtra) * item.qty;
 
   return (
     <div className={styles.cartRow}>
       <div className={styles.cartRowMain}>
-        <span className={styles.cartItemName}>{item.product_name}</span>
-        {item.options.length > 0 && (
+        <span className={styles.cartItemName}>
+          {item.product_name}
+          {item.sizeName && <span className={styles.cartItemSize}> — {item.sizeName}</span>}
+        </span>
+        {item.options.filter(o => o.type !== 'size').length > 0 && (
           <span className={styles.cartItemOpts}>
-            {item.options.map(o => o.label).join('، ')}
+            {item.options.filter(o => o.type !== 'size').map(o => o.label).join('، ')}
           </span>
         )}
         {item.note && <span className={styles.cartItemNote}>{item.note}</span>}
+        {item.sizeName && (
+          <button className={styles.changeSizeBtn} onClick={onChangeSize}>
+            {ar.changeSize}
+          </button>
+        )}
       </div>
       <div className={styles.cartRowControls}>
         <button className={styles.qtyBtn} onClick={() => onQtyChange(-1)}><Icon name="minus" size={13} /></button>
@@ -412,17 +544,15 @@ function CartRow({ item, onQtyChange, onRemove, onCustomize }) {
   );
 }
 
-// ── CustomizeModal ─────────────────────────────────────────────────
+// ── CustomizeModal (extras only – sizes already picked) ────────────
 function CustomizeModal({ item, onClose, onSave }) {
   const [options, setOptions] = useState(item.options ?? []);
   const [note, setNote] = useState(item.note ?? '');
   const [allOptions, setAllOptions] = useState([]);
 
   useEffect(() => {
-    import('../../api/index.js').then(api => {
-      api.optionsList(item.product_id).then(res => {
-        if (res.ok) setAllOptions(res.data);
-      });
+    optionsList(item.product_id).then(res => {
+      if (res.ok) setAllOptions(res.data);
     });
   }, [item.product_id]);
 
@@ -434,29 +564,12 @@ function CustomizeModal({ item, onClose, onSave }) {
     });
   }
 
-  const sizes = allOptions.filter(o => o.type === 'size');
+  // Only show extras in the customize modal (size is managed via SizePickerModal)
   const extras = allOptions.filter(o => o.type === 'extra');
 
   return (
     <Modal open title={`${ar.customize} – ${item.product_name}`} onClose={onClose} size="sm">
       <div className={styles.customizeWrap}>
-        {sizes.length > 0 && (
-          <div className={styles.optGroup}>
-            <p className={styles.optGroupTitle}>{ar.sizes}</p>
-            <div className={styles.optChips}>
-              {sizes.map(o => (
-                <button
-                  key={o.id}
-                  className={`${styles.optChip} ${options.find(x => x.id === o.id) ? styles.optChipActive : ''}`}
-                  onClick={() => toggleOption(o)}
-                >
-                  {o.label}
-                  {o.price > 0 && <span className={styles.optChipPrice}>+{format(o.price)}</span>}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
         {extras.length > 0 && (
           <div className={styles.optGroup}>
             <p className={styles.optGroupTitle}>{ar.extras}</p>

@@ -5,12 +5,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
 import migration001 from '../electron/db/migrations/001_init.js';
+import migration002 from '../electron/db/migrations/002_size_price_mode.js';
 import { setDb } from '../electron/db/connection.js';
 
 // ── One-time setup: inject db BEFORE repos are imported ────────────
 const _testDb = new Database(':memory:');
 _testDb.pragma('foreign_keys = ON');
 migration001.up(_testDb);
+migration002.up(_testDb);
 setDb(_testDb);
 
 // Dynamic imports — run AFTER setDb() above (module-level code order)

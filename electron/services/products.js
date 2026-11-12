@@ -125,6 +125,11 @@ function updateProduct(id, data) {
   if (data.category_id !== undefined) patch.category_id = data.category_id;
   if (data.price !== undefined) patch.price = Math.round(Number(data.price) * 100);
   if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
+  if (data.size_price_mode !== undefined) {
+    if (!['absolute', 'delta'].includes(data.size_price_mode))
+      throw new AppError('وضع سعر الحجم غير صحيح');
+    patch.size_price_mode = data.size_price_mode;
+  }
 
   // Image: if new path provided, import it; if explicit null, clear it
   if (data.imagePath !== undefined) {
@@ -150,6 +155,30 @@ function deleteProduct(id) {
   if (existing.image_path) maybeDeleteImage(existing.image_path);
 }
 
+// ── Pricing ──────────────────────────────────────────────────────
+
+/**
+ * Compute the FINAL unit price for a product+size combination.
+ * This is the SINGLE pricing function for the whole application.
+ *
+ * 'absolute': sizePrice is the full unit price (base price ignored).
+ * 'delta':    sizePrice is added on top of base price.
+ *
+ * Extras (options of type 'extra') are added by the caller AFTER this.
+ *
+ * @param {{
+ *   basePrice:      number,   // minor units
+ *   sizePriceMode:  'absolute'|'delta',
+ *   sizePrice:      number,   // minor units
+ * }} opts
+ * @returns {number} final unit price in minor units
+ */
+function computeUnitPrice({ basePrice, sizePriceMode, sizePrice }) {
+  if (sizePriceMode === 'absolute') return sizePrice;
+  // delta
+  return basePrice + sizePrice;
+}
+
 // ── Options ───────────────────────────────────────────────────────
 
 function listOptions(productId) {
@@ -157,15 +186,30 @@ function listOptions(productId) {
 }
 
 function createOption(data) {
-  const { product_id, type, label, price } = data;
+  const { product_id, type, label, price, sort_order } = data;
   if (!['size', 'extra'].includes(type)) throw new AppError('نوع الخيار غير صحيح');
   if (!label?.trim()) throw new AppError('اسم الخيار مطلوب');
-  if (!prodRepo.getById(product_id)) throw new AppError('المنتج غير موجود');
+  const product = prodRepo.getById(product_id);
+  if (!product) throw new AppError('المنتج غير موجود');
+
+  const priceMinor = Math.round(Number(price || 0) * 100);
+  // Validate: 'absolute' sizes must have price > 0
+  if (type === 'size' && product.size_price_mode === 'absolute' && priceMinor <= 0)
+    throw new AppError('سعر الحجم يجب أن يكون أكبر من صفر في وضع السعر الكامل');
+
+  // Validate duplicate size names within the same product
+  if (type === 'size') {
+    const existing = prodRepo.listOptions(product_id).filter(o => o.type === 'size');
+    if (existing.some(o => o.label.trim().toLowerCase() === label.trim().toLowerCase()))
+      throw new AppError('يوجد حجم بنفس الاسم');
+  }
+
   return prodRepo.createOption({
     product_id,
     type,
     label: label.trim(),
-    price: Math.round(Number(price || 0) * 100),
+    price: priceMinor,
+    sort_order: sort_order ?? 0,
   });
 }
 
@@ -173,6 +217,7 @@ function updateOption(id, data) {
   const patch = {};
   if (data.label !== undefined) patch.label = data.label.trim();
   if (data.price !== undefined) patch.price = Math.round(Number(data.price) * 100);
+  if (data.sort_order !== undefined) patch.sort_order = data.sort_order;
   prodRepo.updateOption(id, patch);
 }
 
@@ -195,5 +240,6 @@ module.exports = {
   listCategories, createCategory, updateCategory, deleteCategory,
   listProducts, createProduct, updateProduct, setProductActive, deleteProduct,
   listOptions, createOption, updateOption, deleteOption,
+  computeUnitPrice,
   importImage, getImageAbsPath,
 };

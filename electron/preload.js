@@ -25,6 +25,7 @@ const ALLOWED_CHANNELS = [
   'products:delete',
   'products:setActive',
   'products:pickImage',
+  'products:computeUnitPrice',
   'options:list',
   'options:create',
   'options:update',
@@ -76,6 +77,16 @@ const ALLOWED_CHANNELS = [
   'backup:list',
   'data:clearTransactions',
   'data:clearAll',
+  'settings:openLogsFolder',
+  'workers:list',
+  'workers:create',
+  'workers:update',
+  'workers:setActive',
+  'workers:getDailyEntry',
+  'workers:saveDailyPayments',
+  'workers:summaryForRange',
+  'workers:detailForRange',
+  'workers:totalPayForRange',
 ];
 
 contextBridge.exposeInMainWorld('api', {

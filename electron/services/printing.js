@@ -12,18 +12,25 @@
  * All HTML generation is delegated to electron/utils/receiptTemplate.js
  * so the preview iframe in the renderer uses the same source of truth.
  *
+ * Design notes:
+ *   - A single hidden BrowserWindow is reused for all print/PDF operations.
+ *   - A promise queue (printQueue) serialises all loadHtml calls so that
+ *     concurrent print and preview requests never clobber each other.
+ *   - The logo is read from disk once and cached as a data: URI.
+ *   - savePdfToFile uses fs.promises.writeFile (non-blocking).
+ *
  * @module electron/services/printing
  */
 
 const { BrowserWindow, app, dialog, shell } = require('electron');
-const path  = require('node:path');
-const fs    = require('node:fs');
+const path = require('node:path');
+const fs   = require('node:fs');
+const fsp  = require('node:fs/promises');
 const { AppError } = require('../utils/errors.js');
-const tmpl  = require('../utils/receiptTemplate.js');
+const tmpl = require('../utils/receiptTemplate.js');
 const { getAllSettings } = require('../repositories/settings.js');
 
 // ── Virtual-printer detection ─────────────────────────────────────
-// These substrings (case-insensitive) identify Windows virtual printers.
 const VIRTUAL_PATTERNS = [
   'microsoft print to pdf',
   'microsoft xps',
@@ -66,6 +73,7 @@ function isVirtualPrinter(name) {
 let printWindow = null;
 
 /**
+ * Create a hidden BrowserWindow sized for the given paper width.
  * @param {number} widthMm
  * @returns {BrowserWindow}
  */
@@ -85,76 +93,166 @@ function makePrintWindow(widthMm) {
   return win;
 }
 
+/**
+ * Return (or create) the shared hidden print window.
+ * If the requested width differs from the current window's width,
+ * the old window is destroyed and a new one is created at the right size.
+ * @param {number} widthMm
+ * @returns {BrowserWindow}
+ */
 function getPrintWindow(widthMm = 80) {
-  if (printWindow && !printWindow.isDestroyed()) return printWindow;
+  if (printWindow && !printWindow.isDestroyed()) {
+    const pxWidth = Math.ceil(widthMm * (96 / 25.4)) + 2;
+    const [currentW] = printWindow.getSize();
+    if (Math.abs(currentW - pxWidth) > 2) {
+      // Width changed (e.g. 80 mm → 58 mm); recreate at the correct size.
+      printWindow.destroy();
+      printWindow = null;
+    } else {
+      return printWindow;
+    }
+  }
   printWindow = makePrintWindow(widthMm);
   return printWindow;
 }
 
+// ── Serial print queue ────────────────────────────────────────────
+// Ensures loadHtml calls never run concurrently in the same window.
+
+/** @type {Promise<void>} */
+let printQueue = Promise.resolve();
+
 /**
- * Load HTML and wait for did-finish-load.
+ * Enqueue a thunk so all print/PDF operations run serially.
+ * @template T
+ * @param {() => Promise<T>} thunk
+ * @returns {Promise<T>}
+ */
+function enqueue(thunk) {
+  const next = printQueue.then(thunk);
+  // Swallow errors on the queue chain itself so one failure doesn't
+  // permanently block subsequent jobs.
+  printQueue = next.then(
+    () => {},
+    () => {},
+  );
+  return next;
+}
+
+// ── loadHtml (serialised) ─────────────────────────────────────────
+
+/**
+ * Load an HTML string into the print window and wait for it to finish.
+ * Cleans up both event listeners regardless of which fires first.
  * @param {string} html
+ * @param {number} widthMm   – paper width; window is (re)created if needed
  * @returns {Promise<void>}
  */
-function loadHtml(html) {
+function loadHtml(html, widthMm = 80) {
   return new Promise((resolve, reject) => {
-    const win = getPrintWindow();
+    const win = getPrintWindow(widthMm);
     const encoded = Buffer.from(html, 'utf8').toString('base64');
     const dataUrl = `data:text/html;base64,${encoded}`;
-    win.webContents.once('did-finish-load', resolve);
-    win.webContents.once('did-fail-load', (_e, _code, desc) =>
-      reject(new AppError(`فشل تحميل الفاتورة: ${desc}`)),
-    );
+
+    function onLoad() {
+      win.webContents.removeListener('did-fail-load', onFail);
+      resolve();
+    }
+    function onFail(_e, _code, desc) {
+      win.webContents.removeListener('did-finish-load', onLoad);
+      reject(new AppError(`فشل تحميل الفاتورة: ${desc}`));
+    }
+
+    win.webContents.once('did-finish-load', onLoad);
+    win.webContents.once('did-fail-load',   onFail);
     win.loadURL(dataUrl);
   });
 }
 
 // ── Logo helper ────────────────────────────────────────────────────
 
-/** @returns {string|null} */
+/**
+ * Cached logo data URI.
+ * undefined = not yet resolved; null = confirmed not found; string = data URI.
+ * @type {string|null|undefined}
+ */
+let _logoCache;
+
+/**
+ * Read the restaurant logo from disk once and cache it as a data: URI.
+ *
+ * Search order:
+ *   1. userData/images/logo.jpg  – custom logo the owner placed
+ *   2. resources/assets/logo.jpg – extraResources path in the packaged app
+ *   3. <appPath>/assets/logo.jpg – dev / fallback
+ *   4. Relative fallback for dev
+ *
+ * @returns {string|null} data: URI or null if no logo found
+ */
 function getLogoDataUrl() {
-  const userLogoPath = path.join(app.getPath('userData'), 'images', 'logo.jpg');
-  let logoPath = fs.existsSync(userLogoPath)
-    ? userLogoPath
-    : path.join(__dirname, '../../assets/logo.jpg');
-  if (!fs.existsSync(logoPath)) return null;
-  try {
-    const data = fs.readFileSync(logoPath);
-    return `data:image/jpeg;base64,${data.toString('base64')}`;
-  } catch { return null; }
+  if (_logoCache !== undefined) return _logoCache;
+
+  const candidates = [
+    path.join(app.getPath('userData'), 'images', 'logo.jpg'),
+    path.join(process.resourcesPath,   'assets',  'logo.jpg'),
+    path.join(app.getAppPath(),         'assets',  'logo.jpg'),
+    path.join(__dirname, '../../assets/logo.jpg'),
+  ];
+
+  for (const p of candidates) {
+    if (!fs.existsSync(p)) continue;
+    try {
+      const ext  = path.extname(p).toLowerCase().replace('.', '');
+      const mime = ext === 'png' ? 'image/png' : 'image/jpeg';
+      const data = fs.readFileSync(p);
+      _logoCache = `data:${mime};base64,${data.toString('base64')}`;
+      return _logoCache;
+    } catch { /* try next */ }
+  }
+
+  console.warn('[printing] Logo not found at any candidate path');
+  _logoCache = null;
+  return null;
+}
+
+/** Invalidate the logo cache (call after the owner replaces logo.jpg). */
+function resetLogoCache() {
+  _logoCache = undefined;
 }
 
 // ── Settings helpers ───────────────────────────────────────────────
 
-/** @returns {{ printerName: string, paperWidth: number, showVirtual: boolean }} */
+/** @returns {{ printerName: string, paperWidth: number }} */
 function getPrinterSettings() {
   const all = getAllSettings();
   return {
-    printerName:  all.printer_name  ?? '',
-    paperWidth:   Number(all.paper_width ?? 80),
-    showVirtual:  (all.show_virtual_printers ?? '1') !== '0',
+    printerName: all.printer_name ?? '',
+    paperWidth:  Number(all.paper_width ?? 80),
   };
 }
 
 // ── Paper-size helper (exported for tests) ─────────────────────────
 
 /**
- * Convert a paper width (mm) to a Chromium pageSize object.
- * Thermal rolls use a fixed width with effectively infinite height;
- * A4 uses standard ISO dimensions.
+ * Convert a paper width (mm) to a Chromium pageSize object in microns.
+ *
+ * For thermal rolls we build an explicit pageSize object that tells
+ * the print driver the exact roll width; we leave height generous
+ * (10 m worth) so the driver feeds as much as the content requires.
+ * This is more reliable than relying on @page { size: Wmm auto } with
+ * webContents.print, which some thermal drivers ignore.
+ *
+ * A4 (210 mm) uses the standard ISO page dimensions.
  *
  * @param {number} widthMm
- * @returns {{ width: number, height: number }|undefined}
- *   undefined → let Chromium use the @page CSS rule (best for thermal)
+ * @returns {{ width: number, height: number }}
  */
 function pageSizeForWidth(widthMm) {
   if (widthMm === 210) {
-    // A4: 210 × 297 mm in microns (Chromium expects microns)
-    return { width: 210000, height: 297000 };
+    return { width: 210_000, height: 297_000 };
   }
-  // For thermal rolls we rely on `@page { size: Wmm auto }` in the CSS;
-  // returning undefined tells printToPDF to honour the CSS @page rule.
-  return undefined;
+  // Thermal: fixed roll width, very long height (content dictates actual feed).
+  return { width: widthMm * 1000, height: 10_000_000 };
 }
 
 // ── Public: list printers ─────────────────────────────────────────
@@ -164,13 +262,12 @@ function pageSizeForWidth(widthMm) {
  * @returns {Promise<PrinterInfo[]>}
  */
 async function listPrinters() {
-  const win = getPrintWindow();
-  if (win.webContents.getURL() === '') {
-    await loadHtml('<html><body></body></html>');
+  // Ensure the window has loaded something so getPrintersAsync works.
+  if (!printWindow || printWindow.isDestroyed() || printWindow.webContents.getURL() === '') {
+    await enqueue(() => loadHtml('<html><body></body></html>'));
   }
-  const raw = await win.webContents.getPrintersAsync();
+  const raw = await getPrintWindow().webContents.getPrintersAsync();
 
-  /** @type {PrinterInfo[]} */
   const printers = raw.map(p => ({
     name:        p.name,
     displayName: p.displayName || p.name,
@@ -180,10 +277,9 @@ async function listPrinters() {
     status:      p.status ?? 0,
   }));
 
-  // Sort: default first, then real, then virtual
   printers.sort((a, b) => {
     if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
-    if (a.isVirtual !== b.isVirtual) return a.isVirtual ? 1 : -1;
+    if (a.isVirtual !== b.isVirtual) return a.isVirtual ?  1 : -1;
     return a.displayName.localeCompare(b.displayName);
   });
 
@@ -194,17 +290,17 @@ async function listPrinters() {
 
 /**
  * Build the receipt HTML string for the given copy type.
- * This is the SINGLE source of truth used by both the print window
+ * This is the single source of truth for both the print window
  * and the in-app preview iframe.
  *
  * @param {{
- *   copy:           'customer' | 'kitchen' | 'combined' | 'cancellation',
- *   order:          object,
- *   items:          object[],
- *   settings:       object,
- *   logoDataUrl?:   string|null,
- *   widthMm?:       number,
- *   isModified?:    boolean,
+ *   copy:          'customer'|'kitchen'|'combined'|'cancellation',
+ *   order:         object,
+ *   items:         object[],
+ *   settings:      object,
+ *   logoDataUrl?:  string|null,
+ *   widthMm?:      number,
+ *   isModified?:   boolean,
  * }} opts
  * @returns {string}
  */
@@ -226,57 +322,58 @@ function renderReceiptHtml({ copy, order, items, settings, logoDataUrl = null, w
 // ── Public: print ─────────────────────────────────────────────────
 
 /**
- * Print a receipt copy.
+ * Print a receipt copy. Serialised through the print queue.
  *
  * @param {{
- *   copy:           'customer' | 'kitchen' | 'both' | 'cancellation',
- *   order:          object,
- *   items:          object[],
- *   deviceName?:    string,       override printer (uses settings if omitted)
- *   widthMm?:       number,       override paper width
- *   silent?:        boolean,      default true; false = show OS dialog
- *   isModified?:    boolean,
+ *   copy:        'customer'|'kitchen'|'both'|'cancellation',
+ *   order:       object,
+ *   items:       object[],
+ *   deviceName?: string,
+ *   widthMm?:    number,
+ *   silent?:     boolean,   default true; false = OS print dialog
+ *   isModified?: boolean,
  * }} opts
  * @returns {Promise<void>}
  */
-async function print({ copy, order, items, deviceName, widthMm, silent = true, isModified = false }) {
-  const settings = getAllSettings();
-  const ps       = getPrinterSettings();
-  const printer  = deviceName  ?? ps.printerName;
-  const width    = widthMm     ?? ps.paperWidth;
-  const logo     = getLogoDataUrl();
+function print({ copy, order, items, deviceName, widthMm, silent = true, isModified = false }) {
+  return enqueue(async () => {
+    const ps      = getPrinterSettings();
+    const printer = deviceName ?? ps.printerName;
+    const width   = widthMm   ?? ps.paperWidth;
+    const logo    = getLogoDataUrl();
+    const settings = getAllSettings();
 
-  // For 'both' we print customer then kitchen sequentially
-  if (copy === 'both') {
-    await print({ copy: 'customer', order, items, deviceName: printer, widthMm: width, silent, isModified });
-    await print({ copy: 'kitchen',  order, items, deviceName: printer, widthMm: width, silent, isModified });
-    return;
-  }
+    // For 'both' we print customer then kitchen sequentially inside the same queue slot.
+    if (copy === 'both') {
+      await _printOne({ copy: 'customer', order, items, printer, width, silent, isModified, logo, settings });
+      await _printOne({ copy: 'kitchen',  order, items, printer, width, silent, isModified, logo: null, settings });
+      return;
+    }
 
-  const html = renderReceiptHtml({
-    copy: copy === 'cancellation' ? 'cancellation' : copy,
-    order, items, settings,
-    logoDataUrl: copy === 'kitchen' ? null : logo,
-    widthMm: width,
-    isModified,
+    const effectiveLogo = copy === 'kitchen' ? null : logo;
+    await _printOne({ copy, order, items, printer, width, silent, isModified, logo: effectiveLogo, settings });
   });
+}
 
-  await loadHtml(html);
+/** @private */
+async function _printOne({ copy, order, items, printer, width, silent, isModified, logo, settings }) {
+  const html = renderReceiptHtml({ copy, order, items, settings, logoDataUrl: logo, widthMm: width, isModified });
+
+  await loadHtml(html, width);
 
   const pageSize = pageSizeForWidth(width);
 
   await new Promise((resolve, reject) => {
-    const win = getPrintWindow();
+    const win = getPrintWindow(width);
     /** @type {Electron.WebContentsPrintOptions} */
     const opts = {
       silent,
       printBackground: true,
       color: false,
       margins: { marginType: 'none' },
+      pageSize,
       ...(printer ? { deviceName: printer } : {}),
-      ...(pageSize ? { pageSize } : {}),
     };
-
     win.webContents.print(opts, (success, reason) => {
       if (success) resolve();
       else reject(new AppError(`حدث خطأ أثناء الطباعة: ${reason ?? 'unknown'}`));
@@ -287,57 +384,58 @@ async function print({ copy, order, items, deviceName, widthMm, silent = true, i
 // ── Public: save PDF ───────────────────────────────────────────────
 
 /**
- * Render a combined receipt (customer + kitchen) and save as PDF.
- * Shows a save dialog; on success opens the containing folder.
+ * Render a combined receipt and save as PDF. Serialised through the print queue.
+ * Uses non-blocking fs.promises.writeFile.
  *
  * @param {{
- *   order:          object,
- *   items:          object[],
- *   widthMm?:       number,
- *   isModified?:    boolean,
+ *   order:           object,
+ *   items:           object[],
+ *   widthMm?:        number,
+ *   isModified?:     boolean,
  *   isCancellation?: boolean,
  * }} opts
  * @returns {Promise<{ saved: boolean, filePath?: string }>}
  */
-async function savePdfToFile({ order, items, widthMm, isModified = false, isCancellation = false }) {
-  const settings = getAllSettings();
-  const ps       = getPrinterSettings();
-  const width    = widthMm ?? ps.paperWidth;
-  const logo     = getLogoDataUrl();
+function savePdfToFile({ order, items, widthMm, isModified = false, isCancellation = false }) {
+  return enqueue(async () => {
+    const ps       = getPrinterSettings();
+    const width    = widthMm ?? ps.paperWidth;
+    const logo     = getLogoDataUrl();
+    const settings = getAllSettings();
 
-  const copy = isCancellation ? 'cancellation' : 'combined';
-  const html = renderReceiptHtml({ copy, order, items, settings, logoDataUrl: logo, widthMm: width, isModified });
+    const copy = isCancellation ? 'cancellation' : 'combined';
+    const html = renderReceiptHtml({ copy, order, items, settings, logoDataUrl: logo, widthMm: width, isModified });
 
-  await loadHtml(html);
+    await loadHtml(html, width);
 
-  // Build default file name: receipt-<number>-DD-MM-YYYY.pdf
-  const d    = new Date();
-  const dd   = String(d.getDate()).padStart(2, '0');
-  const mm   = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  const defaultName = `receipt-${order.number ?? 'unknown'}-${dd}-${mm}-${yyyy}.pdf`;
+    // Build default file name: receipt-<number>-DD-MM-YYYY.pdf
+    const d    = new Date();
+    const dd   = String(d.getDate()).padStart(2, '0');
+    const mm   = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    const defaultName = `receipt-${order.number ?? 'unknown'}-${dd}-${mm}-${yyyy}.pdf`;
 
-  const { canceled, filePath } = await dialog.showSaveDialog({
-    title: 'حفظ الفاتورة كـ PDF',
-    defaultPath: path.join(app.getPath('downloads'), defaultName),
-    filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    const { canceled, filePath } = await dialog.showSaveDialog({
+      title: 'حفظ الفاتورة كـ PDF',
+      defaultPath: path.join(app.getPath('downloads'), defaultName),
+      filters: [{ name: 'PDF', extensions: ['pdf'] }],
+    });
+
+    if (canceled || !filePath) return { saved: false };
+
+    const pageSize = pageSizeForWidth(width);
+    const pdfBuffer = await getPrintWindow(width).webContents.printToPDF({
+      printBackground: true,
+      margins: { marginType: 'none' },
+      pageSize,
+    });
+
+    await fsp.writeFile(filePath, pdfBuffer);
+
+    try { shell.showItemInFolder(filePath); } catch { /* non-fatal */ }
+
+    return { saved: true, filePath };
   });
-
-  if (canceled || !filePath) return { saved: false };
-
-  const pageSize = pageSizeForWidth(width);
-  const pdfBuffer = await getPrintWindow().webContents.printToPDF({
-    printBackground: true,
-    margins: { marginType: 'none' },
-    ...(pageSize ? { pageSize } : {}),
-  });
-
-  fs.writeFileSync(filePath, pdfBuffer);
-
-  // Open the containing folder so the user can find the file
-  try { shell.showItemInFolder(filePath); } catch { /* non-fatal */ }
-
-  return { saved: true, filePath };
 }
 
 // ── Legacy compatibility wrappers (used by existing IPC channels) ──
@@ -362,7 +460,8 @@ module.exports = {
   listPrinters,
   renderReceiptHtml,
   pageSizeForWidth,
-  getLogoDataUrl,   // exported so IPC can pass logo to preview
+  getLogoDataUrl,
+  resetLogoCache,
   print,
   savePdfToFile,
   // Legacy (keep existing IPC channels working)

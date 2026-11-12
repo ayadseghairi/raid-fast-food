@@ -281,8 +281,11 @@ function ProductModal({ mode, initial, categoryId, categories, onClose, onSave }
     name: initial?.name ?? '',
     category_id: initial?.category_id ?? categoryId ?? '',
     price: initial ? String(initial.price / 100) : '0',
-    imagePath: null,
+    size_price_mode: initial?.size_price_mode ?? 'absolute',
+    imagePath: null,       // only set when user picks a NEW image
+    removeImage: false,    // set when user explicitly removes image
   });
+  // Preload current image_url so it shows in the edit form
   const [previewUrl, setPreviewUrl] = useState(initial?.image_url ?? null);
   const [errors, setErrors] = useState({});
   const [busy, setBusy] = useState(false);
@@ -293,10 +296,14 @@ function ProductModal({ mode, initial, categoryId, categories, onClose, onSave }
   async function pickImage() {
     const res = await productsPickImage();
     if (res.ok && !res.data.canceled) {
-      set('imagePath', res.data.filePath);
-      // Use the data: URI from main — file:// is blocked by CSP in dev
+      setForm(f => ({ ...f, imagePath: res.data.filePath, removeImage: false }));
       setPreviewUrl(res.data.previewUrl);
     }
+  }
+
+  function removeImage() {
+    setForm(f => ({ ...f, imagePath: null, removeImage: true }));
+    setPreviewUrl(null);
   }
 
   async function submit(e) {
@@ -309,12 +316,25 @@ function ProductModal({ mode, initial, categoryId, categories, onClose, onSave }
     if (Object.keys(errs).length) return;
 
     setBusy(true);
-    const res = await onSave({
+
+    // Build the payload: only include imagePath if something changed
+    const payload = {
       name: form.name.trim(),
       category_id: Number(form.category_id),
       price: form.price,
-      imagePath: form.imagePath,
-    });
+      size_price_mode: form.size_price_mode,
+    };
+
+    if (form.imagePath) {
+      // New image picked
+      payload.imagePath = form.imagePath;
+    } else if (form.removeImage) {
+      // Explicit removal
+      payload.imagePath = null;
+    }
+    // Otherwise don't include imagePath → service won't touch it
+
+    const res = await onSave(payload);
     setBusy(false);
     if (!res.ok) setErrors({ submit: res.error });
   }
@@ -330,7 +350,17 @@ function ProductModal({ mode, initial, categoryId, categories, onClose, onSave }
         {/* Image picker */}
         <div className={styles.imagePicker} onClick={pickImage}>
           {previewUrl ? (
-            <img src={previewUrl} alt="preview" className={styles.imagePreview} />
+            <>
+              <img src={previewUrl} alt="preview" className={styles.imagePreview} />
+              <button
+                type="button"
+                className={styles.removeImageBtn}
+                onClick={e => { e.stopPropagation(); removeImage(); }}
+                title={ar.noImage}
+              >
+                ✕
+              </button>
+            </>
           ) : (
             <div className={styles.imagePlaceholder}>
               <Icon name="camera" size={32} />
@@ -350,14 +380,51 @@ function ProductModal({ mode, initial, categoryId, categories, onClose, onSave }
           </select>
         </FormField>
 
-        <FormField label={`${ar.productPrice} (${ar.currency})`} error={errors.price} required>
-          <input
-            value={form.price}
-            readOnly
-            onClick={() => setShowNumpad(true)}
-            className={styles.numInput}
-          />
-        </FormField>
+        {/* Size pricing mode toggle */}
+        <div className={styles.sizeModeRow}>
+          <span className={styles.sizeModeLabel}>{ar.sizePriceMode}:</span>
+          <div className={styles.sizeModeToggle}>
+            <button
+              type="button"
+              className={`${styles.sizeModeBtn} ${form.size_price_mode === 'absolute' ? styles.sizeModeBtnActive : ''}`}
+              onClick={() => set('size_price_mode', 'absolute')}
+            >
+              {ar.priceFullMode}
+            </button>
+            <button
+              type="button"
+              className={`${styles.sizeModeBtn} ${form.size_price_mode === 'delta' ? styles.sizeModeBtnActive : ''}`}
+              onClick={() => set('size_price_mode', 'delta')}
+            >
+              {ar.priceDeltaMode}
+            </button>
+          </div>
+        </div>
+
+        {/* Base price: only show when mode is delta */}
+        {form.size_price_mode === 'delta' && (
+          <FormField label={`${ar.basePrice} (${ar.currency})`} error={errors.price} required>
+            <input
+              value={form.price}
+              readOnly
+              onClick={() => setShowNumpad(true)}
+              className={styles.numInput}
+            />
+          </FormField>
+        )}
+
+        {/* Also show price field for absolute mode (it's the default price shown when no sizes) */}
+        {form.size_price_mode === 'absolute' && (
+          <FormField label={`${ar.productPrice} (${ar.currency})`} error={errors.price}>
+            <input
+              value={form.price}
+              readOnly
+              onClick={() => setShowNumpad(true)}
+              className={styles.numInput}
+              placeholder="0 (not used for billing when sizes exist)"
+            />
+          </FormField>
+        )}
 
         {showNumpad && (
           <div className={styles.numpadWrap}>

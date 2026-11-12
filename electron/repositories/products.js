@@ -41,7 +41,7 @@ function create(data) {
 function update(id, data) {
   const fields = [];
   const vals = [];
-  const allowed = ['category_id', 'name', 'price', 'image_path', 'active', 'sort_order'];
+  const allowed = ['category_id', 'name', 'price', 'image_path', 'active', 'sort_order', 'size_price_mode'];
   for (const key of allowed) {
     if (data[key] !== undefined) {
       fields.push(`${key} = ?`);
@@ -66,16 +66,16 @@ function remove(id) {
 
 function listOptions(productId) {
   return getDb()
-    .prepare("SELECT * FROM product_options WHERE product_id = ? ORDER BY type, id")
+    .prepare('SELECT * FROM product_options WHERE product_id = ? ORDER BY type, sort_order, id')
     .all(productId);
 }
 
-/** @param {{ product_id, type, label, price }} data */
+/** @param {{ product_id, type, label, price, sort_order? }} data */
 function createOption(data) {
   const stmt = getDb().prepare(
-    'INSERT INTO product_options (product_id, type, label, price) VALUES (?, ?, ?, ?)',
+    'INSERT INTO product_options (product_id, type, label, price, sort_order) VALUES (?, ?, ?, ?, ?)',
   );
-  const info = stmt.run(data.product_id, data.type, data.label, data.price ?? 0);
+  const info = stmt.run(data.product_id, data.type, data.label, data.price ?? 0, data.sort_order ?? 0);
   return getDb().prepare('SELECT * FROM product_options WHERE id = ?').get(info.lastInsertRowid);
 }
 
@@ -84,6 +84,7 @@ function updateOption(id, data) {
   const vals = [];
   if (data.label !== undefined) { fields.push('label = ?'); vals.push(data.label); }
   if (data.price !== undefined) { fields.push('price = ?'); vals.push(data.price); }
+  if (data.sort_order !== undefined) { fields.push('sort_order = ?'); vals.push(data.sort_order); }
   if (!fields.length) return;
   vals.push(id);
   getDb().prepare(`UPDATE product_options SET ${fields.join(', ')} WHERE id = ?`).run(...vals);
