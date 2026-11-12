@@ -313,9 +313,9 @@
   border-bottom: 1px solid var(--border);
 }
 
-.status_normal    { color: var(--text-primary); }
-.status_modified  { color: var(--color-warning, #b45309); }
-.status_cancelled { color: var(--color-danger,  #dc2626); }
+.status_normal    { color: var(--color-text); }
+.status_modified  { color: var(--color-warning); }
+.status_cancelled { color: var(--color-danger); }
 
 .itemSize  { color: var(--text-secondary); font-size: 0.85em; }
 .itemExtra { color: var(--accent); font-size: 0.85em; }
