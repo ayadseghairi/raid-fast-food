@@ -1,12 +1,20 @@
 /**
- * Tests for date helpers (Item 7):
+ * Tests for date helpers:
  * - fmtDate, fmtDateTime (src/utils/money.js + electron/utils/dates.js)
  * - DD/MM/YYYY format, Latin digits only
  * - Edge cases: 31/12, 29/02 leap day, invalid dates
+ * - localISODate / parseISODate local-time helpers
  */
 import { describe, it, expect } from 'vitest';
 import { fmtDate, fmtDateTime } from '../src/utils/money.js';
-import { fmtDate as fmtDateMain, formatDisplay, today, nowIso } from '../electron/utils/dates.js';
+import {
+  fmtDate as fmtDateMain,
+  formatDisplay,
+  today,
+  nowIso,
+  localISODate,
+  parseISODate,
+} from '../electron/utils/dates.js';
 
 describe('fmtDate (renderer)', () => {
   it('formats YYYY-MM-DD → DD/MM/YYYY', () => {
@@ -81,5 +89,55 @@ describe('today / nowIso', () => {
   it('nowIso() returns valid ISO string', () => {
     const iso = nowIso();
     expect(new Date(iso).toISOString()).toBe(iso);
+  });
+});
+
+describe('localISODate', () => {
+  it('formats a known local date correctly', () => {
+    // Construct a local midnight date (not UTC)
+    const d = new Date(2026, 10, 12); // Nov 12, 2026 local midnight
+    expect(localISODate(d)).toBe('2026-11-12');
+  });
+
+  it('without argument returns today in YYYY-MM-DD', () => {
+    expect(localISODate()).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
+
+  it('never returns UTC date at local midnight UTC+1 offset', () => {
+    // Simulate: local date is Nov 13, UTC date is still Nov 12 (00:00 local = 23:00 UTC Nov 12)
+    // localISODate with explicit local Date returns the local date
+    const localMidnight = new Date(2026, 10, 13, 0, 0, 0); // Nov 13 local
+    expect(localISODate(localMidnight)).toBe('2026-11-13');
+    // toISOString() on this Date would give a different UTC date depending on TZ
+    // but localISODate always uses getFullYear/getMonth/getDate
+    const result = localISODate(localMidnight);
+    expect(result).toMatch(/^2026-11-/);
+  });
+
+  it('handles end-of-year correctly', () => {
+    const d = new Date(2025, 11, 31); // Dec 31, 2025 local
+    expect(localISODate(d)).toBe('2025-12-31');
+  });
+});
+
+describe('parseISODate', () => {
+  it('parses YYYY-MM-DD as local midnight Date', () => {
+    const d = parseISODate('2026-11-12');
+    expect(d.getFullYear()).toBe(2026);
+    expect(d.getMonth()).toBe(10);  // 0-indexed
+    expect(d.getDate()).toBe(12);
+  });
+
+  it('round-trips with localISODate', () => {
+    const iso = '2024-02-29';
+    expect(localISODate(parseISODate(iso))).toBe(iso);
+  });
+
+  it('does NOT create a UTC midnight Date (avoids +1 day on UTC parse)', () => {
+    const d = parseISODate('2026-01-01');
+    // Local date components should be Jan 1
+    expect(d.getDate()).toBe(1);
+    expect(d.getMonth()).toBe(0);
+    expect(d.getFullYear()).toBe(2026);
   });
 });

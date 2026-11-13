@@ -39,6 +39,12 @@ handle('day:getCurrent', () => {
   return orderSvc.getOrCreateOpenDay();
 });
 
+// Read-only: returns the open day without creating a new one.
+// Used by CloseDayScreen so merely opening the screen never auto-creates a day.
+handle('day:getOpen', () => {
+  return dayRepo.getOpenDay();
+});
+
 // day:list kept here for backward compat; day:close is handled in ipc/dayClose.js
 handle('day:list', () => {
   return dayRepo.listAll();

@@ -39,6 +39,7 @@ const ALLOWED_CHANNELS = [
   'orders:cancel',
   'orders:auditLog',
   'day:getCurrent',
+  'day:getOpen',
   'day:close',
   'day:list',
   'day:report',

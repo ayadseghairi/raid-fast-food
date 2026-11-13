@@ -58,6 +58,8 @@ export const ordersAuditLog = (orderId) => call('orders:auditLog', { orderId });
 
 // ── Business day ────────────────────────────────────────────────
 export const dayGetCurrent     = () => call('day:getCurrent', {});
+export const dayGetOpen        = () => call('day:getOpen', {});
+
 export const dayClose          = () => call('day:close', {});
 export const dayList           = () => call('day:list', {});
 export const dayReport         = (dayId) => call('day:report', { dayId });

@@ -12,6 +12,7 @@
 
 const { getDb }  = require('../db/connection.js');
 const { AppError } = require('../utils/errors.js');
+const { localISODate } = require('../utils/dates.js');
 
 // ── Helpers ───────────────────────────────────────────────────────
 
@@ -23,7 +24,7 @@ const { AppError } = require('../utils/errors.js');
  * @returns {{ from: string, to: string }}
  */
 function resolveDateRange(period, dateFrom, dateTo) {
-  const todayDate = new Date().toISOString().slice(0, 10);
+  const todayDate = localISODate();
 
   if (period === 'day') {
     return { from: todayDate, to: todayDate };
@@ -32,20 +33,18 @@ function resolveDateRange(period, dateFrom, dateTo) {
   if (period === 'week') {
     const d = new Date();
     const dayOfWeek = d.getDay(); // 0=Sun
-    const friday = new Date(d);
-    friday.setDate(d.getDate() - dayOfWeek + 5); // end of Arabic week = Friday
-    const sunday = new Date(friday);
-    sunday.setDate(friday.getDate() - 6);
+    const friday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - dayOfWeek + 5);
+    const sunday = new Date(friday.getFullYear(), friday.getMonth(), friday.getDate() - 6);
     return {
-      from: sunday.toISOString().slice(0, 10),
-      to: friday.toISOString().slice(0, 10),
+      from: localISODate(sunday),
+      to:   localISODate(friday),
     };
   }
 
   if (period === 'month') {
     const now = new Date();
-    const from = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const to   = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10);
+    const from = localISODate(new Date(now.getFullYear(), now.getMonth(), 1));
+    const to   = localISODate(new Date(now.getFullYear(), now.getMonth() + 1, 0));
     return { from, to };
   }
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import ar from '../../i18n/ar.js';
 import {
-  dayGetCurrent,
+  dayGetOpen,
   dayClose,
   dayReport,
   dayListClosed,
@@ -91,7 +91,7 @@ export default function CloseDayScreen() {
     setLoading(true);
     setError('');
     const [dayRes, histRes] = await Promise.all([
-      dayGetCurrent(),
+      dayGetOpen(),
       dayListClosed(),
     ]);
     if (dayRes.ok)  setOpenDay(dayRes.data);
