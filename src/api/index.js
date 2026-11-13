@@ -7,6 +7,9 @@
 /** @returns {Promise<{ok: boolean, data?: any, error?: string}>} */
 const call = (channel, payload) => window.api.invoke(channel, payload);
 
+// ── App ─────────────────────────────────────────────────────────
+export const appGetVersion = () => call('app:getVersion', {});
+
 // ── Auth ────────────────────────────────────────────────────────
 export const authLogin = (role, password) => call('auth:login', { role, password });
 export const authLogout = () => call('auth:logout', {});

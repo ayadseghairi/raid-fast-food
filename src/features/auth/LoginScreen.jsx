@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ar from '../../i18n/ar.js';
-import { authLogin } from '../../api/index.js';
+import { authLogin, appGetVersion } from '../../api/index.js';
 import { useSession } from '../../app/SessionContext.jsx';
 import Button from '../../components/Button.jsx';
 import styles from './LoginScreen.module.css';
@@ -12,6 +12,11 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [appVersion, setAppVersion] = useState('');
+
+  useEffect(() => {
+    appGetVersion().then(res => { if (res.ok) setAppVersion(res.data.version); });
+  }, []);
 
   async function handleCashier() {
     setLoading(true);
@@ -125,7 +130,7 @@ export default function LoginScreen() {
           </form>
         )}
       </div>
-      <div className={styles.versionFooter}>v1.2.0</div>
+      <div className={styles.versionFooter}>{appVersion ? `v${appVersion}` : ''}</div>
     </div>
   );
 }

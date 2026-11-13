@@ -13,6 +13,7 @@ import {
   backupList,
   dataClearTransactions,
   dataClearAll,
+  appGetVersion,
 } from '../../api/index.js';
 import { toMinor, fromMinor } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
@@ -82,10 +83,13 @@ export default function SettingsScreen() {
   const [dangerBusy,   setDangerBusy]   = useState(false);
   const [dangerError,  setDangerError]  = useState('');
 
+  // App version
+  const [appVersion, setAppVersion] = useState('');
+
   // ── Load settings ──────────────────────────────────────────────
   const load = useCallback(async () => {
     setLoading(true);
-    const res = await settingsGet();
+    const [res, verRes] = await Promise.all([settingsGet(), appGetVersion()]);
     if (res.ok) {
       const d = res.data;
       setRestName(d.restaurant_name ?? '');
@@ -96,6 +100,7 @@ export default function SettingsScreen() {
       setPaperWidth(d.paper_width ?? '80');
       setBackupFolder(d.backup_folder ?? '');
     }
+    if (verRes.ok) setAppVersion(verRes.data.version);
     setLoading(false);
   }, []);
 
@@ -451,7 +456,7 @@ export default function SettingsScreen() {
       <Section title="حول البرنامج">
         <div className={styles.aboutRow}>
           <span>{ar.appName}</span>
-          <span className={styles.aboutVersion}>v1.2.0</span>
+          <span className={styles.aboutVersion}>{appVersion ? `v${appVersion}` : '…'}</span>
         </div>
         <div className={styles.actions}>
           <Button variant="ghost" onClick={async () => { await settingsOpenLogsFolder(); }}>

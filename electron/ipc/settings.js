@@ -1,13 +1,13 @@
 'use strict';
 
 /**
- * IPC: settings:get, settings:set, settings:openLogsFolder
+ * IPC: settings:get, settings:set, settings:openLogsFolder, app:getVersion
  */
 
 const { handle } = require('./_handle.js');
 const { AppError } = require('../utils/errors.js');
 const { getAllSettings, setManySettings } = require('../repositories/settings.js');
-const { shell } = require('electron');
+const { shell, app } = require('electron');
 const logger = require('../utils/logger.js');
 
 const ALLOWED_KEYS = new Set([
@@ -43,4 +43,8 @@ handle('settings:openLogsFolder', () => {
   if (!dir) throw new AppError('مجلد السجلات غير متاح');
   shell.openPath(dir);
   return { done: true };
+});
+
+handle('app:getVersion', () => {
+  return { version: app.getVersion() };
 });

@@ -8,6 +8,7 @@ const { contextBridge, ipcRenderer } = require('electron');
  * All channels are whitelisted here.
  */
 const ALLOWED_CHANNELS = [
+  'app:getVersion',
   'auth:login',
   'auth:logout',
   'auth:changePassword',
