@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write   # needed to upload release assets
+
+jobs:
+  build-windows:
+    name: Build Windows installer
+    runs-on: windows-latest
+
+    steps:
+      # 1. Checkout source
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 2. Node.js (matches the project's runtime requirement)
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      # 3. Install dependencies
+      #    --ignore-scripts prevents native modules from rebuilding here;
+      #    electron-builder handles the native rebuild via npmRebuild=false.
+      - name: Install dependencies
+        run: npm ci
+
+      # 4. Build Vite (renderer bundle → dist/)
+      - name: Build renderer
+        run: npm run build
+
+      # 5. Build Electron Windows installer (NSIS x64)
+      - name: Build Electron app
+        run: npx electron-builder --win --x64
+        env:
+          # Suppress electron-builder telemetry
+          ELECTRON_BUILDER_ALLOW_UNRESOLVED_DEPENDENCIES: 'true'
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 6. Upload the .exe to the GitHub Release created by the tag
+      - name: Upload installer to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release/RaidFastFood-Setup-*.exe
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
