@@ -23,36 +23,47 @@
 }
 
 /* ── Category tabs ───────────────────────────────────────────────── */
+/* tabsRow wraps the category scroll area and the action buttons.    */
+/* The tabs themselves use the shared CategoryTabs visual style;     */
+/* here we keep flex-wrap for the actions row.                       */
 .tabsRow {
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  padding: var(--space-3) var(--space-6);
+  padding: 0 var(--space-4) 0 var(--space-4);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
   flex-shrink: 0;
+  /* Allow tabs to wrap onto second row on wide action bars */
   flex-wrap: wrap;
+  min-width: 0;
 }
 
+/* Inline tab list – wrapping variant for the management screen */
 .tabs {
   display: flex;
   gap: var(--space-2);
   flex-wrap: wrap;
   flex: 1;
+  min-width: 0;
+  padding: var(--space-2) 0;
 }
 
+/* Visual style matches CategoryTabs.module.css .tab */
 .tab {
-  height: var(--btn-height-sm);
-  padding: 0 var(--space-5);
+  height: 40px;
+  padding: 0 var(--space-4);
   border-radius: var(--radius-full);
   border: 2px solid var(--color-border);
   background: transparent;
   color: var(--color-text-muted);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 600;
   cursor: pointer;
   transition: all var(--transition-fast);
   font-family: var(--font-family);
+  white-space: nowrap;
+  min-width: 56px;
 }
 
 .tab:hover {
@@ -75,12 +86,13 @@
 /* ── Product grid ────────────────────────────────────────────────── */
 .grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: var(--space-3);
   padding: var(--space-4);
   overflow-y: auto;
   flex: 1;
   align-content: start;
+  min-width: 0;
 }
 
 .empty {
@@ -111,19 +123,24 @@
   border-color: var(--color-primary);
 }
 
+/* Ensure card children don't overflow */
+.card > * {
+  min-width: 0;
+}
+
 .cardSuspended {
   opacity: 0.5;
 }
 
 .cardImg {
   position: relative;
-  /* square aspect via padding trick */
-  aspect-ratio: 1 / 1;
+  aspect-ratio: 4 / 3;
   background: var(--color-surface);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .cardImg img {
@@ -159,10 +176,13 @@
   font-weight: 700;
   font-size: var(--font-size-sm);
   margin-bottom: 2px;
-  white-space: nowrap;
+  /* 2-line clamp */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
   color: var(--color-text);
+  line-height: 1.4;
 }
 
 .cardPrice {

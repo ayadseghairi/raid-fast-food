@@ -120,9 +120,13 @@
 
 .main {
   flex: 1;
-  overflow-y: auto;
+  /* overflow: hidden here so that height: 100% on child screens
+     resolves correctly against the constrained flex height, not
+     the scroll height. Each screen manages its own internal scroll. */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .loading {

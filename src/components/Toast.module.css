@@ -8,8 +8,16 @@
   gap: var(--space-2);
   z-index: 2000;
   pointer-events: none;
-  min-width: 280px;
+  /* Do not force a minimum width on the empty container –
+     that created a visible grey box at the top of the window
+     even when no toasts were active. Width is now content-driven. */
+  width: max-content;
   max-width: 480px;
+}
+
+/* When container has no children, collapse to zero footprint */
+.container:empty {
+  display: none;
 }
 
 .toast {

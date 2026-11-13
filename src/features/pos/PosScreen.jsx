@@ -15,6 +15,7 @@ import NumPad from '../../components/NumPad.jsx';
 import FormField from '../../components/FormField.jsx';
 import PrintDialog from '../../components/PrintDialog.jsx';
 import SizePickerModal from '../../components/SizePickerModal.jsx';
+import CategoryTabs from '../../components/CategoryTabs.jsx';
 import styles from './PosScreen.module.css';
 
 // ── Order types ───────────────────────────────────────────────────
@@ -254,18 +255,12 @@ export default function PosScreen() {
     <div className={styles.pos}>
       {/* ── Left: Product browser ──────────────────────────────── */}
       <div className={styles.browser}>
-        {/* Category tabs */}
-        <div className={styles.catBar}>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              className={`${styles.catTab} ${activeCat === cat.id ? styles.catActive : ''}`}
-              onClick={() => setActiveCat(cat.id)}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
+        {/* Category tabs – scrollable, arrow buttons, edge fades */}
+        <CategoryTabs
+          categories={categories}
+          activeId={activeCat}
+          onChange={setActiveCat}
+        />
 
         {/* Product grid */}
         <div className={styles.prodGrid}>
