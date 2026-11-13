@@ -6,6 +6,35 @@ Dates: DD/MM/YYYY. Versions: [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.1] – 13/11/2026
+
+### Added (مضاف)
+- **فتح الكل / طي الكل** في شاشة التقارير: زران في شريط المحتوى يفتحان أو يطويان كل الأقسام دفعةً واحدة. الأقسام عائدة إلى التحكم المستقل بعد ذلك.
+- **زر "العودة للأعلى"** عائم في شاشة التقارير: يظهر بعد التمرير 200px ويعيد إلى الأعلى بحركة سلسة.
+- **حالة فارغة للرسم البياني**: بدلاً من الاختفاء الصامت، يظهر إطار منقّط مع رسالة "لا توجد بيانات للرسم البياني" عند غياب البيانات.
+- **مكوّن CategoryTabs قابل لإعادة الاستخدام**: شريط التصنيفات في نقطة البيع أصبح مكوّناً مستقلاً بأسهم تمرير، تلاشٍ على الحواف، وتمرير تلقائي للعنصر النشط.
+- اختبارات CSS بنيوية (`tests/reports_layout.test.js`, 20 تأكيداً): تتحقق من `display:block`, `overflow-y:auto`, `flex-shrink:0`, `min-height:56px`, ارتفاع `.chartWrap`, وكل أسماء الكلاسات الجديدة.
+
+### Changed (تغيير)
+- **شريط التصنيفات في نقطة البيع**: صف واحد قابل للتمرير أفقياً (سحب + عجلة الماوس + أسهم) بدلاً من التفاف السطور؛ التصنيف النشط يُمرَّر تلقائياً إلى العرض.
+- **شبكة بطاقات المنتجات**: `grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))` بدلاً من عرض ثابت؛ الصور بنسبة عرض إلى ارتفاع 4:3 مع `object-fit:cover`.
+- **لوحة العربة (RTL)**: عرض `clamp(340px, 28vw, 440px)` مع `flex-shrink:0`، حشوة داخلية كافية، لا شيء يُقطع عند أي عرض نافذة بين 1024–1920px.
+- **قواعد تخطيط عامة**: `min-width:0` على أطفال flex/grid القابلة للتجاوز؛ `overflow:hidden/auto` على الحاويات الصحيحة؛ لا عروض ثابتة بالبكسل لمنطقة المحتوى الرئيسية.
+- **نوع طلب "سفري"**: محذوف من الطلبات الجديدة في نقطة البيع والشاشات الأخرى؛ الطلبات القديمة تُعرض بالتسمية "سفري (قديم)" في التقارير وقائمة الطلبات.
+- **شاشة التقارير**: هيكل CSS أُعيد كتابته بالكامل باستخدام متغيرات `tokens.css` فقط، جداول بيانات بخط أكبر مع رؤوس وتذييلات ثابتة، وتمرير داخلي مستقل.
+
+### Fixed (تصحيح)
+- **انسحاق أقسام التقارير**: الحاوية كانت `display:flex; flex-direction:column` مما يجعل كل قسم يُضغط إلى جزء من ارتفاع الشاشة. تصحيح: `display:block` حتى تتراص الأقسام بارتفاعها الطبيعي والحاوية هي التي تتمرر.
+- **نص رأس القسم يُقطع**: `.section` كان `overflow:hidden`؛ أصبح `overflow:visible`.
+- **شريط رسم بياني فارغ**: `.chartWrap` بلا ارتفاع محدد → SVG يظهر بارتفاع صفر؛ تصحيح: `height:280px` ثابت.
+- **عنصر رمادي شبح في أعلى النافذة** (Item E): `ToastContainer` كان يُصيّر `<div>` فارغاً بـ`min-width:280px` حتى بغياب أي إشعار، مما أنتج مستطيلاً مرئياً شبحياً. تصحيح: `width:max-content` + `.container:empty { display:none }`.
+
+### Technical Notes
+- لا تغييرات في منطق الأعمال أو قاعدة البيانات أو IPC في هذا الإصدار.
+- الملفات المُغيَّرة: `src/components/CategoryTabs.{jsx,module.css}`, `src/components/Toast.module.css`, `src/app/HomeShell.module.css`, `src/features/pos/PosScreen.{jsx,module.css}`, `src/features/products/ProductsScreen.module.css`, `src/features/reports/ReportsScreen.{jsx,module.css}`, `src/i18n/ar.js`.
+
+---
+
 ## [1.2.0] – 12/11/2026
 
 ### Added (مضاف)
@@ -60,6 +89,7 @@ Dates: DD/MM/YYYY. Versions: [Semantic Versioning](https://semver.org/).
 
 الإصدار الأول من تطبيق "فاست فود رائد" – نقطة بيع مكتبية للويندوز.
 
+[1.2.1]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/ayadseghairi/raid-fast-food/releases/tag/v1.0.0
