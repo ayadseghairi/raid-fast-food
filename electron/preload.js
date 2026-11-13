@@ -58,6 +58,8 @@ const ALLOWED_CHANNELS = [
   'purchases:list',
   'purchases:create',
   'purchases:updatePaid',
+  'purchases:update',
+  'purchases:delete',
   'purchases:debtSummary',
   'expenses:list',
   'expenses:create',
