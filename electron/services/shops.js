@@ -147,6 +147,52 @@ function updatePurchasePaid(id, paid) {
   return shopsRepo.updatePurchasePaid(id, paidMinor);
 }
 
+/**
+ * Update a purchase (date, items, paid) in one transaction.
+ */
+function updatePurchase(id, { date, items, paid = 0 }) {
+  if (!shopsRepo.getPurchaseById(id)) throw new AppError('الفاتورة غير موجودة');
+  if (!date) throw new AppError('تاريخ الفاتورة مطلوب');
+  if (!Array.isArray(items) || items.length === 0) throw new AppError('أصناف الفاتورة مطلوبة');
+
+  const normalizedItems = items.map(item => {
+    const unitPrice = Math.round(Number(item.unit_price || 0) * 100);
+    const qty       = Number(item.qty || 1);
+    const lineTotal = Math.round(unitPrice * qty);
+    return {
+      supply_id:  item.supply_id ?? null,
+      name:       item.name?.trim() ?? '—',
+      qty,
+      unit_price: unitPrice,
+      line_total: lineTotal,
+    };
+  });
+
+  const total     = normalizedItems.reduce((s, i) => s + i.line_total, 0);
+  const paidMinor = Math.round(Number(paid || 0) * 100);
+  const db        = getDb();
+
+  return db.transaction(() => {
+    shopsRepo.updatePurchaseFull(db, id, { date, total, paid: paidMinor });
+    shopsRepo.updatePurchaseItems(db, id, normalizedItems);
+    return {
+      purchase: shopsRepo.getPurchaseById(id),
+      items: shopsRepo.getPurchaseItems(id),
+    };
+  })();
+}
+
+/**
+ * Delete a purchase and all its items.
+ */
+function deletePurchase(id) {
+  if (!shopsRepo.getPurchaseById(id)) throw new AppError('الفاتورة غير موجودة');
+  const db = getDb();
+  db.transaction(() => {
+    shopsRepo.deletePurchase(db, id);
+  })();
+}
+
 function listPurchases(shopId) {
   const purchases = shopsRepo.listPurchases(shopId);
   return purchases.map(p => ({
@@ -178,7 +224,7 @@ function getShopImageAbsPath(filename) {
 module.exports = {
   listShops, createShop, updateShop, deleteShop,
   listSupplies, createSupply, updateSupply, deleteSupply,
-  createPurchase, updatePurchasePaid, listPurchases,
+  createPurchase, updatePurchasePaid, updatePurchase, deletePurchase, listPurchases,
   shopDebt, debtSummary,
   getShopImageAbsPath,
 };

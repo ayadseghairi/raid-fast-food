@@ -4,6 +4,7 @@ import {
   shopsList, shopsCreate, shopsUpdate, shopsDelete, shopsPickImage,
   suppliesList, suppliesCreate, suppliesUpdate, suppliesDelete,
   purchasesList, purchasesCreate, purchasesUpdatePaid,
+  purchasesUpdate, purchasesDelete,
   purchasesDebtSummary,
 } from '../../api/index.js';
 import { format, fromMinor, fmtDate } from '../../utils/money.js';
@@ -231,13 +232,17 @@ function ShopPanel({ shop }) {
   const [supplyError,  setSupplyError]  = useState('');
   const [deleteSTarget,setDeleteSTarget]= useState(null);
 
-  // Purchase modal
+  // Purchase modal (create + edit)
   const [purchaseModal, setPurchaseModal] = useState(false);
+  const [editPurchase,  setEditPurchase]  = useState(null); // null = new, object = edit
   const [pDate,  setPDate]  = useState(today());
   const [pItems, setPItems] = useState([{ name: '', qty: 1, unit_price: '' }]);
   const [pPaid,  setPPaid]  = useState('0');
   const [pBusy,  setPBusy]  = useState(false);
   const [pError, setPError] = useState('');
+
+  // Delete purchase confirm
+  const [deletePTarget, setDeletePTarget] = useState(null);
 
   // Update paid modal
   const [editPaidTarget, setEditPaidTarget] = useState(null);
@@ -273,14 +278,36 @@ function ShopPanel({ shop }) {
     else setSupplyError(res.error ?? ar.unknownError);
   }
 
-  // ── Save purchase ────────────────────────────────────────────
+  // ── Open purchase modal (new or edit) ───────────────────────
+  function openNewPurchase() {
+    setEditPurchase(null);
+    resetPurchaseForm();
+    setPurchaseModal(true);
+  }
+
+  function openEditPurchaseModal(p) {
+    setEditPurchase(p);
+    setPDate(p.date);
+    setPItems(
+      (p.items ?? []).map(i => ({
+        name: i.name,
+        qty: i.qty,
+        unit_price: fromMinor(i.unit_price).toString(),
+        supply_id: i.supply_id ?? null,
+      }))
+    );
+    setPPaid(fromMinor(p.paid).toString());
+    setPError('');
+    setPurchaseModal(true);
+  }
+
+  // ── Save purchase (create or update) ─────────────────────────
   async function savePurchase() {
     setPError('');
     const validItems = pItems.filter(i => i.name.trim() && Number(i.qty) > 0 && Number(i.unit_price) > 0);
     if (validItems.length === 0) { setPError(ar.purchaseItems + ': ' + ar.required); return; }
     setPBusy(true);
-    const res = await purchasesCreate({
-      shop_id: shop.id,
+    const payload = {
       date: pDate,
       paid: Number(pPaid),
       items: validItems.map(i => ({
@@ -289,16 +316,29 @@ function ShopPanel({ shop }) {
         unit_price: Number(i.unit_price),
         supply_id: i.supply_id ?? null,
       })),
-    });
+    };
+    const res = editPurchase
+      ? await purchasesUpdate(editPurchase.id, payload)
+      : await purchasesCreate({ shop_id: shop.id, ...payload });
     setPBusy(false);
     if (res.ok) { setPurchaseModal(false); resetPurchaseForm(); load(); }
     else setPError(res.error ?? ar.unknownError);
   }
 
   function resetPurchaseForm() {
+    setEditPurchase(null);
     setPDate(today());
     setPItems([{ name: '', qty: 1, unit_price: '' }]);
     setPPaid('0');
+    setPError('');
+  }
+
+  // ── Delete purchase ──────────────────────────────────────────
+  async function confirmDeletePurchase() {
+    if (!deletePTarget) return;
+    await purchasesDelete(deletePTarget.id);
+    setDeletePTarget(null);
+    load();
   }
 
   // ── Update paid ──────────────────────────────────────────────
@@ -365,7 +405,7 @@ function ShopPanel({ shop }) {
       {tab === 'purchases' && (
         <div>
           <div className={styles.panelToolbar}>
-            <Button size="sm" onClick={() => { resetPurchaseForm(); setPurchaseModal(true); }}>
+            <Button size="sm" onClick={openNewPurchase}>
               <Icon name="plus" size={14} /> {ar.addPurchase}
             </Button>
           </div>
@@ -376,6 +416,22 @@ function ShopPanel({ shop }) {
                 <div className={styles.purchaseCardHead}>
                   <span className={styles.purchaseDate}>{fmtDate(p.date)}</span>
                   <span className={styles.purchaseTotal}>{format(p.total)} {ar.currency}</span>
+                  <div className={styles.purchaseCardActions}>
+                    <button
+                      className={styles.iconBtn}
+                      title={ar.editPurchase}
+                      onClick={() => openEditPurchaseModal(p)}
+                    >
+                      <Icon name="edit" size={14} />
+                    </button>
+                    <button
+                      className={`${styles.iconBtn} ${styles.danger}`}
+                      title={ar.deletePurchase}
+                      onClick={() => setDeletePTarget(p)}
+                    >
+                      <Icon name="trash" size={14} />
+                    </button>
+                  </div>
                 </div>
                 <div className={styles.purchaseCardFoot}>
                   <span className={styles.purchasePaid}>{ar.purchasePaid}: {format(p.paid)}</span>
@@ -427,8 +483,18 @@ function ShopPanel({ shop }) {
         onCancel={() => setDeleteSTarget(null)}
       />
 
-      {/* ── Purchase modal ───────────────────────── */}
-      <Modal open={purchaseModal} title={ar.addPurchase} onClose={() => setPurchaseModal(false)} size="md">
+      {/* ── Delete purchase confirm ──────────────── */}
+      <ConfirmDialog
+        open={!!deletePTarget}
+        message={ar.confirmDeletePurchase}
+        confirmVariant="danger"
+        confirmLabel={ar.delete}
+        onConfirm={confirmDeletePurchase}
+        onCancel={() => setDeletePTarget(null)}
+      />
+
+      {/* ── Purchase modal (create / edit) ───────── */}
+      <Modal open={purchaseModal} title={editPurchase ? ar.editPurchase : ar.addPurchase} onClose={() => setPurchaseModal(false)} size="md">
         <div className={styles.purchaseForm}>
           <FormField label={ar.purchaseDate}>
             <DateInput value={pDate} onChange={setPDate} />

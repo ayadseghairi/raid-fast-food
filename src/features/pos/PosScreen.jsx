@@ -98,7 +98,7 @@ export default function PosScreen() {
 
   // ── Cart helpers ───────────────────────────────────────────────
   const cartTotal = cart.reduce((s, item) => {
-    const optExtra = item.options.reduce((os, o) => os + o.price, 0);
+    const optExtra = item.options.filter(o => o.type !== 'size').reduce((os, o) => os + o.price, 0);
     return s + (item.finalUnitPrice + optExtra) * item.qty;
   }, 0);
   const feeMinor = toMinor(deliveryFee);
@@ -486,8 +486,16 @@ function ProductTile({ product, onClick, computeUnitPrice: computeFn }) {
     ? `${ar.fromPrice} ${format(displayInfo.lowestPrice)} ${ar.currency}`
     : `${format(product.price)} ${ar.currency}`;
 
+  const isUnavailable = !product.active;
+
   return (
-    <button key={product.id} className={styles.prodTile} onClick={() => onClick(product)}>
+    <button
+      key={product.id}
+      className={`${styles.prodTile}${isUnavailable ? ` ${styles.prodTileDimmed}` : ''}`}
+      onClick={() => !isUnavailable && onClick(product)}
+      disabled={isUnavailable}
+      aria-disabled={isUnavailable}
+    >
       <div className={styles.tileImg}>
         {product.image_url
           ? <img src={product.image_url} alt={product.name} />

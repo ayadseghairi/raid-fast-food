@@ -108,6 +108,15 @@ handle('purchases:updatePaid', ({ id, paid }) => {
   return shopSvc.updatePurchasePaid(requireId(id), paid);
 });
 
+handle('purchases:update', ({ id, ...rest }) => {
+  return shopSvc.updatePurchase(requireId(id), rest);
+});
+
+handle('purchases:delete', ({ id }) => {
+  shopSvc.deletePurchase(requireId(id));
+  return { done: true };
+});
+
 handle('purchases:debtSummary', () => {
   return shopSvc.debtSummary();
 });

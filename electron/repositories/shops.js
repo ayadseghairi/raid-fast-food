@@ -106,6 +106,26 @@ function updatePurchasePaid(id, paid) {
   return getPurchaseById(id);
 }
 
+function deletePurchase(db, id) {
+  db.prepare('DELETE FROM purchase_items WHERE purchase_id = ?').run(id);
+  db.prepare('DELETE FROM purchases WHERE id = ?').run(id);
+}
+
+function updatePurchaseItems(db, purchaseId, items) {
+  db.prepare('DELETE FROM purchase_items WHERE purchase_id = ?').run(purchaseId);
+  for (const item of items) {
+    db.prepare(
+      `INSERT INTO purchase_items (purchase_id, supply_id, name, qty, unit_price, line_total)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(purchaseId, item.supply_id ?? null, item.name, item.qty, item.unit_price, item.line_total);
+  }
+}
+
+function updatePurchaseFull(db, id, { date, total, paid }) {
+  db.prepare('UPDATE purchases SET date = ?, total = ?, paid = ? WHERE id = ?').run(date, total, paid, id);
+  return getPurchaseById(id);
+}
+
 function getPurchaseItems(purchaseId) {
   return getDb()
     .prepare('SELECT * FROM purchase_items WHERE purchase_id = ? ORDER BY id')
@@ -124,4 +144,5 @@ module.exports = {
   listSupplies, getSupplyById, createSupply, updateSupply, removeSupply,
   listPurchases, getPurchaseById, shopDebt, totalDebt,
   createPurchase, updatePurchasePaid, getPurchaseItems, createPurchaseItem,
+  deletePurchase, updatePurchaseItems, updatePurchaseFull,
 };

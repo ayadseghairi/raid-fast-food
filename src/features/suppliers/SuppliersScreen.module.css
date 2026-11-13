@@ -130,6 +130,7 @@
 }
 .purchaseDate { font-weight: 700; font-size: var(--font-size-sm); }
 .purchaseTotal { font-weight: 700; color: var(--color-primary); }
+.purchaseCardActions { display: flex; gap: var(--space-1); align-items: center; margin-inline-start: auto; padding-inline-start: var(--space-2); }
 .purchaseCardFoot {
   display: flex; gap: var(--space-3); align-items: center;
   padding: var(--space-2) var(--space-4);

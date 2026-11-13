@@ -86,6 +86,8 @@ export const suppliesDelete = (id) => call('supplies:delete', { id });
 export const purchasesList       = (shopId) => call('purchases:list', { shopId });
 export const purchasesCreate     = (data) => call('purchases:create', data);
 export const purchasesUpdatePaid = (id, paid) => call('purchases:updatePaid', { id, paid });
+export const purchasesUpdate     = (id, data) => call('purchases:update', { id, ...data });
+export const purchasesDelete     = (id) => call('purchases:delete', { id });
 export const purchasesDebtSummary = () => call('purchases:debtSummary', {});
 
 // ── Expenses ────────────────────────────────────────────────────
