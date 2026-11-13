@@ -129,8 +129,8 @@ describe('orders service – createOrder', () => {
     const prod = prodRepo.create({ category_id: cat.id, name: 'فرايز', price: 1000 });
 
     const item = { product_id: prod.id, product_name: 'فرايز', unit_price: 1000, qty: 1, options: [] };
-    const { order: o1 } = orderSvc.createOrder({ order_type: 'takeaway', items: [item] });
-    const { order: o2 } = orderSvc.createOrder({ order_type: 'takeaway', items: [item] });
+    const { order: o1 } = orderSvc.createOrder({ order_type: 'dine_in', items: [item] });
+    const { order: o2 } = orderSvc.createOrder({ order_type: 'dine_in', items: [item] });
 
     expect(o1.day_id).toBe(o2.day_id);
     expect(o2.number).toBe(o1.number + 1);
@@ -148,6 +148,77 @@ describe('orders service – createOrder', () => {
         order_type: 'unknown',
         items: [{ product_id: prod.id, product_name: 'تست', unit_price: 100, qty: 1, options: [] }],
       }),
-    ).toThrow('نوع الطلب غير صحيح');
+    ).toThrow('نوع الطلب غير مقبول');
+  });
+
+  it('rejects takeaway for new orders', () => {
+    const cat = catRepo.list()[0];
+    const prod = prodRepo.create({ category_id: cat.id, name: 'سفري-تست', price: 500 });
+    expect(() =>
+      orderSvc.createOrder({
+        order_type: 'takeaway',
+        items: [{ product_id: prod.id, product_name: 'سفري-تست', unit_price: 500, qty: 1, options: [] }],
+      }),
+    ).toThrow('نوع الطلب غير مقبول');
+  });
+
+  it('rejects delivery without a phone number', () => {
+    const cat = catRepo.list()[0];
+    const prod = prodRepo.create({ category_id: cat.id, name: 'ديليفري-تست', price: 800 });
+    expect(() =>
+      orderSvc.createOrder({
+        order_type: 'delivery',
+        items: [{ product_id: prod.id, product_name: 'ديليفري-تست', unit_price: 800, qty: 1, options: [] }],
+        delivery_fee: 300,
+        // No phone supplied
+      }),
+    ).toThrow('رقم هاتف');
+  });
+
+  it('allows delivery when phone is supplied', () => {
+    const cat = catRepo.list()[0];
+    const prod = prodRepo.create({ category_id: cat.id, name: 'ديليفري-صح', price: 800 });
+    const { order } = orderSvc.createOrder({
+      order_type: 'delivery',
+      items: [{ product_id: prod.id, product_name: 'ديليفري-صح', unit_price: 800, qty: 1, options: [] }],
+      delivery_fee: 300,
+      delivery_phone: '0551234567',
+    });
+    expect(order.order_type).toBe('delivery');
+    expect(order.total).toBe(1100);
+  });
+});
+
+// ── Legacy takeaway display ────────────────────────────────────────
+describe('legacy takeaway orders – still readable', () => {
+  beforeEach(() => {
+    _db.exec(`
+      DELETE FROM order_items; DELETE FROM orders; DELETE FROM customers; DELETE FROM business_days;
+      DELETE FROM sqlite_sequence WHERE name IN ('order_items','orders','customers','business_days');
+    `);
+  });
+
+  it('can directly insert and read a takeaway order (legacy path)', () => {
+    // Insert a legacy takeaway order directly (bypassing the service, as it
+    // would have been created before the takeaway restriction was added).
+    const cat = catRepo.list()[0];
+    const prod = prodRepo.create({ category_id: cat.id, name: 'برغر-قديم', price: 2000 });
+
+    const day = dayRepo.create('2024-01-01');
+    const orderRow = _db.prepare(
+      `INSERT INTO orders (day_id, number, order_type, delivery_fee, total, status, created_at)
+       VALUES (?, 1, 'takeaway', 0, 2000, 'normal', '2024-01-01T12:00:00.000Z')`
+    ).run(day.id);
+    const orderId = orderRow.lastInsertRowid;
+    _db.prepare(
+      `INSERT INTO order_items (order_id, product_id, product_name, unit_price, qty, options, line_total)
+       VALUES (?, ?, 'برغر-قديم', 2000, 1, '[]', 2000)`
+    ).run(orderId, prod.id);
+
+    // The service's listOrdersForDay must still return it
+    const orders = orderSvc.listOrdersForDay(day.id);
+    expect(orders).toHaveLength(1);
+    expect(orders[0].order_type).toBe('takeaway');
+    expect(orders[0].total).toBe(2000);
   });
 });

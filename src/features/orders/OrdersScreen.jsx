@@ -19,9 +19,10 @@ const STATUS_LABEL = {
   cancelled: ar.statusCancelled,
 };
 
+// takeaway: use legacy label so old orders still display correctly
 const TYPE_LABEL = {
   dine_in:  ar.dineIn,
-  takeaway: ar.takeaway,
+  takeaway: ar.takeawayLegacy,
   delivery: ar.delivery,
 };
 

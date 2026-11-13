@@ -17,7 +17,8 @@ const PERIODS = [
   { value: 'custom', label: ar.periodCustom },
 ];
 
-const TYPE_LABELS   = { dine_in: ar.dineIn, takeaway: ar.takeaway, delivery: ar.delivery };
+// takeaway uses the legacy label; it is shown only when count > 0 in the by-type section
+const TYPE_LABELS   = { dine_in: ar.dineIn, takeaway: ar.takeawayLegacy, delivery: ar.delivery };
 const STATUS_LABELS = { normal: ar.statusNormal, modified: ar.statusModified, cancelled: ar.statusCancelled };
 
 const CAT_LABELS = {
@@ -294,11 +295,14 @@ export default function ReportsScreen() {
       }))
     : [];
 
+  // Filter out takeaway from chart if no legacy data exists
   const salesByTypeData = report
     ? [
-        { label: ar.dineIn,   value: report.sales.byType.dine_in   ?? 0 },
-        { label: ar.takeaway, value: report.sales.byType.takeaway   ?? 0 },
-        { label: ar.delivery, value: report.sales.byType.delivery   ?? 0 },
+        { label: ar.dineIn,          value: report.sales.byType.dine_in  ?? 0 },
+        ...(report.sales.byType.takeaway > 0
+          ? [{ label: ar.takeawayLegacy, value: report.sales.byType.takeaway ?? 0 }]
+          : []),
+        { label: ar.delivery,        value: report.sales.byType.delivery  ?? 0 },
       ]
     : [];
 
@@ -528,9 +532,12 @@ export default function ReportsScreen() {
           {/* ── Sales by type ── */}
           <Section title={ar.salesByType} defaultOpen={false}>
             <div className={styles.cards}>
-              {Object.entries(TYPE_LABELS).map(([type, label]) => (
-                <SummaryCard key={type} label={label} value={format(report.sales.byType[type] ?? 0)} />
-              ))}
+              {Object.entries(TYPE_LABELS)
+                // Hide takeaway row when there is no legacy data
+                .filter(([type]) => type !== 'takeaway' || (report.sales.byType.takeaway ?? 0) > 0)
+                .map(([type, label]) => (
+                  <SummaryCard key={type} label={label} value={format(report.sales.byType[type] ?? 0)} />
+                ))}
             </div>
           </Section>
 

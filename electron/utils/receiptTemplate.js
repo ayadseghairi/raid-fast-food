@@ -89,9 +89,10 @@ function buildCss(widthMm) {
   `;
 }
 
+// 'takeaway' uses the legacy label so reprinted old receipts still show the right type
 const ORDER_TYPE_LABEL = {
   dine_in:  'محلي',
-  takeaway: 'سفري',
+  takeaway: 'سفري (قديم)',
   delivery: 'توصيل',
 };
 

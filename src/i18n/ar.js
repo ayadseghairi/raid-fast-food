@@ -65,7 +65,8 @@ const ar = {
   newOrder: 'طلب جديد',
   orderType: 'نوع الطلب',
   dineIn: 'محلي',
-  takeaway: 'سفري',
+  takeaway: 'سفري',          // kept for legacy order display only
+  takeawayLegacy: 'سفري (قديم)',  // label shown for old takeaway orders everywhere
   delivery: 'توصيل',
   cart: 'السلة',
   cartEmpty: 'السلة فارغة',
@@ -228,7 +229,7 @@ const ar = {
   dayDate: 'تاريخ اليوم',
   dayClosedAt: 'وقت الإغلاق',
   dineInSales: 'محلي',
-  takeawaySales: 'سفري',
+  takeawaySales: 'سفري (قديم)',
   deliverySales: 'توصيل',
   noOpenDay: 'لا يوجد يوم مفتوح',
   closedDaysBadge: 'أيام غير مغلقة',

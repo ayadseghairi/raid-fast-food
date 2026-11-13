@@ -27,7 +27,8 @@ const CAT_LABELS = {
   other:       'أخرى',
 };
 
-const TYPE_LABELS   = { dine_in: 'محلي', takeaway: 'سفري', delivery: 'توصيل' };
+// 'takeaway' uses the legacy label for exports; old orders still display correctly.
+const TYPE_LABELS   = { dine_in: 'محلي', takeaway: 'سفري (قديم)', delivery: 'توصيل' };
 const STATUS_LABELS = { normal: 'عادي', modified: 'معدّل', cancelled: 'ملغي' };
 
 function fmt(minor) {
@@ -223,7 +224,7 @@ function buildReportHtml(report, settings) {
     <thead><tr><th>النوع</th><th>المبلغ</th></tr></thead>
     <tbody>
       <tr><td>محلي</td><td>${fmt(s.byType.dine_in ?? 0)}</td></tr>
-      <tr><td>سفري</td><td>${fmt(s.byType.takeaway ?? 0)}</td></tr>
+      ${(s.byType.takeaway ?? 0) > 0 ? `<tr><td>سفري (قديم)</td><td>${fmt(s.byType.takeaway ?? 0)}</td></tr>` : ''}
       <tr><td>توصيل</td><td>${fmt(s.byType.delivery ?? 0)}</td></tr>
     </tbody>
   </table>

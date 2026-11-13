@@ -57,8 +57,8 @@ function makeOrder(overrides = {}) {
 
 describe('closeDay', () => {
   it('closes an open day and writes correct totals', () => {
-    makeOrder();                            // 2500
-    makeOrder({ order_type: 'takeaway' }); // 2500
+    makeOrder();  // 2500
+    makeOrder();  // 2500
     const result = dayCloseSvc.closeDay();
 
     expect(result.receiptCount).toBe(2);
@@ -78,9 +78,16 @@ describe('closeDay', () => {
     expect(result.totalSales).toBe(2500);     // only o1
   });
 
-  it('counts sales by order type', () => {
+  it('counts sales by order type (legacy takeaway inserted directly)', () => {
     makeOrder({ order_type: 'dine_in' });
-    makeOrder({ order_type: 'takeaway' });
+    // Insert a legacy takeaway order directly (service no longer accepts takeaway)
+    const today = new Date().toISOString().slice(0, 10);
+    let day = _db.prepare('SELECT id FROM business_days WHERE date = ?').get(today);
+    if (!day) day = { id: _db.prepare('INSERT INTO business_days (date) VALUES (?)').run(today).lastInsertRowid };
+    _db.prepare(
+      `INSERT INTO orders (day_id, number, order_type, delivery_fee, total, status, created_at)
+       VALUES (?, 99, 'takeaway', 0, 2500, 'normal', datetime('now'))`
+    ).run(day.id);
     makeOrder({
       order_type: 'delivery',
       delivery_fee: 500,

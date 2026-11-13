@@ -119,7 +119,7 @@ describe('getReport – sales', () => {
 
   it('sums sales for the date range', () => {
     makeOrder();
-    makeOrder({ order_type: 'takeaway' });
+    makeOrder({ order_type: 'dine_in' });
 
     const report = reportSvc.getReport({ period: 'day' });
     expect(report.sales.receiptCount).toBe(2);
@@ -136,9 +136,15 @@ describe('getReport – sales', () => {
     expect(report.sales.totalSales).toBe(2500);
   });
 
-  it('breaks down by order type', () => {
+  it('breaks down by order type (legacy takeaway inserted directly)', () => {
     makeOrder({ order_type: 'dine_in' });
-    makeOrder({ order_type: 'takeaway' });
+    // Insert a legacy takeaway order directly (service no longer accepts takeaway)
+    const today = new Date().toISOString().slice(0, 10);
+    const day = _db.prepare('SELECT id FROM business_days WHERE date = ?').get(today);
+    _db.prepare(
+      `INSERT INTO orders (day_id, number, order_type, delivery_fee, total, status, created_at)
+       VALUES (?, 99, 'takeaway', 0, 2500, 'normal', datetime('now'))`
+    ).run(day.id);
     makeOrder({
       order_type: 'delivery',
       delivery_fee: 500,
@@ -151,6 +157,37 @@ describe('getReport – sales', () => {
     expect(byType.delivery).toBe(3000); // 2500 + 500
   });
 });
+
+// ── Takeaway legacy-only tests ─────────────────────────────────────
+
+describe('legacy takeaway – report aggregation', () => {
+  it('byType.takeaway is 0 when only dine_in and delivery orders exist', () => {
+    makeOrder({ order_type: 'dine_in' });
+    makeOrder({
+      order_type: 'delivery',
+      delivery_fee: 200,
+      delivery_phone: '0501000000',
+    });
+    const { byType } = reportSvc.getReport({ period: 'day' }).sales;
+    expect(byType.takeaway).toBe(0);
+  });
+
+  it('byType.takeaway reflects legacy orders inserted directly', () => {
+    makeOrder({ order_type: 'dine_in' });
+    const today = new Date().toISOString().slice(0, 10);
+    let day = _db.prepare('SELECT id FROM business_days WHERE date = ?').get(today);
+    if (!day) day = { id: _db.prepare('INSERT INTO business_days (date) VALUES (?)').run(today).lastInsertRowid };
+    _db.prepare(
+      `INSERT INTO orders (day_id, number, order_type, delivery_fee, total, status, created_at)
+       VALUES (?, 88, 'takeaway', 0, 1500, 'normal', datetime('now'))`
+    ).run(day.id);
+
+    const { byType } = reportSvc.getReport({ period: 'day' }).sales;
+    expect(byType.takeaway).toBe(1500);
+    expect(byType.dine_in).toBe(2500);
+  });
+});
+
 
 // ── Purchases aggregation ──────────────────────────────────────────
 

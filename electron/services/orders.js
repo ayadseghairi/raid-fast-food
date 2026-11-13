@@ -73,8 +73,9 @@ function createOrder(payload) {
   const { order_type, items, delivery_fee, customer,
     delivery_name, delivery_phone, delivery_addr } = payload;
 
-  if (!['dine_in', 'takeaway', 'delivery'].includes(order_type))
-    throw new AppError('نوع الطلب غير صحيح');
+  // 'takeaway' is no longer accepted for NEW orders (legacy data can still have it).
+  if (!['dine_in', 'delivery'].includes(order_type))
+    throw new AppError('نوع الطلب غير مقبول. الأنواع المتاحة: محلي أو توصيل فقط');
   if (!Array.isArray(items) || items.length === 0)
     throw new AppError('السلة فارغة');
 

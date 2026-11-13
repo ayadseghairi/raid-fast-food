@@ -72,7 +72,7 @@ function addSummarySheet(wb, report) {
     ['إجمالي المبيعات',         fmt(sales.totalSales),             'دج'],
     ['رسوم التوصيل',           fmt(sales.totalDeliveryFees ?? 0), 'دج'],
     ['مبيعات محلي',             fmt(sales.byType.dine_in ?? 0),   'دج'],
-    ['مبيعات سفري',             fmt(sales.byType.takeaway ?? 0),  'دج'],
+    ...(( sales.byType.takeaway ?? 0) > 0 ? [['مبيعات سفري (قديم)', fmt(sales.byType.takeaway ?? 0), 'دج']] : []),
     ['مبيعات توصيل',            fmt(sales.byType.delivery ?? 0),  'دج'],
     ['إجمالي مشتريات الموردين', fmt(purchases.totalPurchases),    'دج'],
     ['إجمالي المصروفات الأخرى', fmt(expenses.totalExpenses),      'دج'],
@@ -142,7 +142,7 @@ function addSalesSheet(wb, report) {
     { header: 'المبلغ (دج)',   key: 'total', width: 20 },
   ]);
 
-  const typeLabels = { dine_in: 'محلي', takeaway: 'سفري', delivery: 'توصيل' };
+  const typeLabels = { dine_in: 'محلي', takeaway: 'سفري (قديم)', delivery: 'توصيل' };
   const byType = report.sales.byType;
 
   // Count per type from orders list
@@ -150,6 +150,8 @@ function addSalesSheet(wb, report) {
   for (const o of (report.orders ?? [])) counts[o.order_type] = (counts[o.order_type] ?? 0) + 1;
 
   for (const [type, label] of Object.entries(typeLabels)) {
+    // Skip takeaway row if no legacy orders exist
+    if (type === 'takeaway' && (counts[type] ?? 0) === 0) continue;
     const row = sheet.addRow([label, counts[type] ?? 0, fmt(byType[type] ?? 0)]);
     row.getCell(1).alignment = { horizontal: 'right', readingOrder: 'rtl' };
     row.getCell(3).numFmt    = CURRENCY_FMT;
@@ -172,7 +174,7 @@ function addOrdersSheet(wb, report) {
     { header: 'الإجمالي (دج)',  key: 'total',     width: 16 },
   ]);
 
-  const typeLabels   = { dine_in: 'محلي', takeaway: 'سفري', delivery: 'توصيل' };
+  const typeLabels   = { dine_in: 'محلي', takeaway: 'سفري (قديم)', delivery: 'توصيل' };
   const statusLabels = { normal: 'عادي', modified: 'معدّل', cancelled: 'ملغي' };
 
   for (const o of (report.orders ?? [])) {
@@ -215,7 +217,7 @@ function addCancelledSheet(wb, report) {
     { header: 'الإجمالي (دج)', key: 'total',    width: 16 },
   ]);
 
-  const typeLabels = { dine_in: 'محلي', takeaway: 'سفري', delivery: 'توصيل' };
+  const typeLabels = { dine_in: 'محلي', takeaway: 'سفري (قديم)', delivery: 'توصيل' };
 
   for (const o of report.cancelled) {
     const itemSummary = (o.items ?? []).map(it => `${it.product_name} x${it.qty}`).join(' | ');

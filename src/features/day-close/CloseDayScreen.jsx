@@ -59,10 +59,13 @@ function DayReportPanel({ report }) {
           <span>{ar.dineInSales}</span>
           <span>{format(byType.dine_in ?? 0)} {ar.currency}</span>
         </div>
-        <div className={styles.byTypeRow}>
-          <span>{ar.takeawaySales}</span>
-          <span>{format(byType.takeaway ?? 0)} {ar.currency}</span>
-        </div>
+        {/* Show legacy takeaway row only when old orders exist */}
+        {(byType.takeaway ?? 0) > 0 && (
+          <div className={styles.byTypeRow}>
+            <span>{ar.takeawaySales}</span>
+            <span>{format(byType.takeaway)} {ar.currency}</span>
+          </div>
+        )}
         <div className={styles.byTypeRow}>
           <span>{ar.deliverySales}</span>
           <span>{format(byType.delivery ?? 0)} {ar.currency}</span>

@@ -18,11 +18,10 @@ import SizePickerModal from '../../components/SizePickerModal.jsx';
 import CategoryTabs from '../../components/CategoryTabs.jsx';
 import styles from './PosScreen.module.css';
 
-// ── Order types ───────────────────────────────────────────────────
+// ── Order types (takeaway removed from new orders) ────────────────
 const ORDER_TYPES = [
-  { key: 'dine_in',   label: ar.dineIn },
-  { key: 'takeaway',  label: ar.takeaway },
-  { key: 'delivery',  label: ar.delivery },
+  { key: 'dine_in',  label: ar.dineIn   },
+  { key: 'delivery', label: ar.delivery },
 ];
 
 /**
