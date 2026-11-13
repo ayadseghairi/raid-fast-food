@@ -225,12 +225,12 @@ function ProductCard({ product, onEdit, onToggle, onDelete, onOptions }) {
         <p className={styles.cardPrice}>{format(product.price)} {ar.currency}</p>
       </div>
       <div className={styles.cardActions}>
-        <button className={styles.iconBtn} onClick={onEdit} title={ar.edit}><Icon name="edit" size={17} /></button>
-        <button className={styles.iconBtn} onClick={onOptions} title="خيارات"><Icon name="options" size={17} /></button>
-        <button className={styles.iconBtn} onClick={onToggle} title={product.active ? ar.suspendProduct : ar.activateProduct}>
+        <button className={styles.iconBtn} onClick={onEdit} title={ar.edit} aria-label={ar.edit}><Icon name="edit" size={17} /></button>
+        <button className={styles.iconBtn} onClick={onOptions} title={ar.sizesOptions} aria-label={ar.sizesOptions}><Icon name="options" size={17} /></button>
+        <button className={styles.iconBtn} onClick={onToggle} title={product.active ? ar.suspendProduct : ar.activateProduct} aria-label={product.active ? ar.suspendProduct : ar.activateProduct}>
           {product.active ? <Icon name="pause" size={17} /> : <Icon name="play" size={17} />}
         </button>
-        <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} onClick={onDelete} title={ar.delete}><Icon name="trash" size={17} /></button>
+        <button className={`${styles.iconBtn} ${styles.iconBtnDanger}`} onClick={onDelete} title={ar.delete} aria-label={ar.delete}><Icon name="trash" size={17} /></button>
       </div>
     </div>
   );

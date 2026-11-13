@@ -141,6 +141,7 @@ const ar = {
   optionPrice: 'السعر الإضافي',
   addSize: 'إضافة حجم',
   addExtra: 'إضافة إضافة',
+  sizesOptions: 'الأحجام والإضافات',
 
   // ── Categories ──────────────────────────────────────────────────
   categoryName: 'اسم الفئة',
