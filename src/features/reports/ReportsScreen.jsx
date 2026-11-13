@@ -6,6 +6,7 @@ import Button from '../../components/Button.jsx';
 import DateInput from '../../components/DateInput.jsx';
 import Modal from '../../components/Modal.jsx';
 import Toast from '../../components/Toast.jsx';
+import Icon from '../../components/Icon.jsx';
 import styles from './ReportsScreen.module.css';
 
 // ── Period picker ─────────────────────────────────────────────────
@@ -41,7 +42,7 @@ function SummaryCard({ label, value, highlight, sub }) {
   );
 }
 
-function Section({ title, children, defaultOpen = true }) {
+function Section({ title, meta, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className={styles.section}>
@@ -51,8 +52,11 @@ function Section({ title, children, defaultOpen = true }) {
         type="button"
         aria-expanded={open}
       >
-        <span className={styles.sectionTitle}>{title}</span>
-        <span className={styles.sectionChevron}>{open ? '▲' : '▼'}</span>
+        <span className={styles.sectionTitleGroup}>
+          <span className={styles.sectionTitle}>{title}</span>
+          {meta && <span className={styles.sectionMeta}>{meta}</span>}
+        </span>
+        <Icon name={open ? 'chevronUp' : 'chevronDown'} size={16} className={styles.sectionChevron} />
       </button>
       {open && <div className={styles.sectionBody}>{children}</div>}
     </div>
@@ -66,7 +70,11 @@ function DataTable({ columns, rows, footerRow, onRowClick }) {
         <thead>
           <tr>
             {columns.map(c => (
-              <th key={c.key} className={c.numeric ? styles.numeric : undefined}>
+              <th
+                key={c.key}
+                className={c.numeric ? styles.numeric : undefined}
+                style={c.minWidth ? { minWidth: c.minWidth } : undefined}
+              >
                 {c.label}
               </th>
             ))}
@@ -80,7 +88,12 @@ function DataTable({ columns, rows, footerRow, onRowClick }) {
               className={onRowClick ? styles.clickableRow : undefined}
             >
               {columns.map(c => (
-                <td key={c.key} className={c.numeric ? styles.numeric : undefined}>
+                <td
+                  key={c.key}
+                  className={c.numeric ? styles.numeric : undefined}
+                  style={c.minWidth ? { minWidth: c.minWidth } : undefined}
+                  title={typeof row[c.key] === 'string' ? row[c.key] : undefined}
+                >
                   {row[c.key]}
                 </td>
               ))}
@@ -96,7 +109,7 @@ function DataTable({ columns, rows, footerRow, onRowClick }) {
         </tbody>
         {footerRow && (
           <tfoot>
-            <tr className={styles.footerRow}>
+            <tr>
               {footerRow.map((cell, i) => (
                 <td key={i} className={styles.numeric}>{cell}</td>
               ))}
@@ -309,12 +322,12 @@ export default function ReportsScreen() {
   // ── Table row builders ───────────────────────────────────────────
 
   const byDayCols = [
-    { key: 'date',     label: ar.dayDate },
-    { key: 'orders',   label: ar.receiptCountLabel, numeric: true },
-    { key: 'sales',    label: ar.totalSalesLabel,   numeric: true },
-    { key: 'fees',     label: ar.totalDeliveryFees, numeric: true },
-    { key: 'expenses', label: ar.totalExpensesLabel, numeric: true },
-    { key: 'net',      label: ar.netLabel,           numeric: true },
+    { key: 'date',     label: ar.dayDate,            minWidth: 100 },
+    { key: 'orders',   label: ar.receiptCountLabel,  numeric: true, minWidth: 70 },
+    { key: 'sales',    label: ar.totalSalesLabel,    numeric: true, minWidth: 110 },
+    { key: 'fees',     label: ar.totalDeliveryFees,  numeric: true, minWidth: 110 },
+    { key: 'expenses', label: ar.totalExpensesLabel, numeric: true, minWidth: 110 },
+    { key: 'net',      label: ar.netLabel,           numeric: true, minWidth: 110 },
   ];
 
   const byDayRows = report
@@ -329,11 +342,11 @@ export default function ReportsScreen() {
     : [];
 
   const productCols = [
-    { key: 'rank',    label: ar.rankLabel },
-    { key: 'name',    label: ar.productNameLabel },
-    { key: 'size',    label: ar.sizeLabelReport },
-    { key: 'qty',     label: ar.soldQtyLabel,  numeric: true },
-    { key: 'revenue', label: ar.revenueLabel,  numeric: true },
+    { key: 'rank',    label: ar.rankLabel,       minWidth: 48 },
+    { key: 'name',    label: ar.productNameLabel, minWidth: 160 },
+    { key: 'size',    label: ar.sizeLabelReport,  minWidth: 80 },
+    { key: 'qty',     label: ar.soldQtyLabel,    numeric: true, minWidth: 70 },
+    { key: 'revenue', label: ar.revenueLabel,    numeric: true, minWidth: 110 },
   ];
 
   const makeProductRows = arr =>
@@ -346,11 +359,11 @@ export default function ReportsScreen() {
     }));
 
   const purchaseCols = [
-    { key: 'shop',      label: ar.shopLabel },
-    { key: 'date',      label: ar.purchaseDate },
-    { key: 'total',     label: ar.total,     numeric: true },
-    { key: 'paid',      label: ar.paidLabel, numeric: true },
-    { key: 'remaining', label: ar.remainingLabel, numeric: true },
+    { key: 'shop',      label: ar.shopLabel,       minWidth: 150 },
+    { key: 'date',      label: ar.purchaseDate,    minWidth: 100 },
+    { key: 'total',     label: ar.total,           numeric: true, minWidth: 110 },
+    { key: 'paid',      label: ar.paidLabel,       numeric: true, minWidth: 110 },
+    { key: 'remaining', label: ar.remainingLabel,  numeric: true, minWidth: 110 },
   ];
 
   const purchaseTableRows = report
@@ -366,8 +379,8 @@ export default function ReportsScreen() {
     : [];
 
   const debtCols = [
-    { key: 'shop',      label: ar.shopLabel },
-    { key: 'remaining', label: ar.remainingDebts, numeric: true },
+    { key: 'shop',      label: ar.shopLabel,      minWidth: 150 },
+    { key: 'remaining', label: ar.remainingDebts, numeric: true, minWidth: 110 },
   ];
 
   const debtTableRows = report
@@ -377,10 +390,10 @@ export default function ReportsScreen() {
     : [];
 
   const expenseCols = [
-    { key: 'date',     label: ar.expenseDate },
-    { key: 'name',     label: ar.expenseName },
-    { key: 'category', label: ar.categoryLabel },
-    { key: 'amount',   label: ar.expenseAmount, numeric: true },
+    { key: 'date',     label: ar.expenseDate,    minWidth: 100 },
+    { key: 'name',     label: ar.expenseName,    minWidth: 160 },
+    { key: 'category', label: ar.categoryLabel,  minWidth: 100 },
+    { key: 'amount',   label: ar.expenseAmount,  numeric: true, minWidth: 110 },
   ];
 
   const expenseTableRows = report
@@ -393,9 +406,9 @@ export default function ReportsScreen() {
     : [];
 
   const workerCols = [
-    { key: 'name',  label: ar.workerName },
-    { key: 'days',  label: ar.daysPaid, numeric: true },
-    { key: 'total', label: ar.totalPaid, numeric: true },
+    { key: 'name',  label: ar.workerName,         minWidth: 150 },
+    { key: 'days',  label: ar.daysPaid, numeric: true, minWidth: 80 },
+    { key: 'total', label: ar.totalPaid, numeric: true, minWidth: 110 },
   ];
 
   const workerRows = report
@@ -407,21 +420,30 @@ export default function ReportsScreen() {
     : [];
 
   const orderCols = [
-    { key: 'number',   label: ar.receiptNumber, numeric: true },
-    { key: 'datetime', label: ar.orderDate },
-    { key: 'type',     label: ar.orderType },
-    { key: 'status',   label: ar.orderStatus },
-    { key: 'customer', label: ar.customerName },
-    { key: 'fee',      label: ar.deliveryFee, numeric: true },
-    { key: 'total',    label: ar.total,       numeric: true },
+    { key: 'number',   label: ar.receiptNumber, numeric: true,  minWidth: 56 },
+    { key: 'datetime', label: ar.orderDate,                     minWidth: 140 },
+    { key: 'type',     label: ar.orderType,                     minWidth: 90 },
+    { key: 'status',   label: ar.orderStatus,                   minWidth: 90 },
+    { key: 'customer', label: ar.customerName,                  minWidth: 120 },
+    { key: 'fee',      label: ar.deliveryFee,   numeric: true,  minWidth: 90 },
+    { key: 'total',    label: ar.total,         numeric: true,  minWidth: 110 },
   ];
+
+  // Status badge: colored chip with text label (not color alone)
+  function StatusBadge({ status }) {
+    return (
+      <span className={`${styles.badge} ${styles[`badge_${status}`]}`}>
+        {STATUS_LABELS[status] ?? status}
+      </span>
+    );
+  }
 
   const makeOrderRows = (orders) => (orders ?? []).map(o => ({
     _raw:     o,
     number:   o.number,
     datetime: fmtDateTime(o.created_at),
     type:     TYPE_LABELS[o.order_type]   ?? o.order_type,
-    status:   STATUS_LABELS[o.status]     ?? o.status,
+    status:   <StatusBadge status={o.status} />,
     customer: o.delivery_name ?? '—',
     fee:      format(o.delivery_fee ?? 0),
     total:    format(o.total),
@@ -489,7 +511,10 @@ export default function ReportsScreen() {
           </p>
 
           {/* ── Summary cards ── */}
-          <Section title={ar.receiptCountLabel + ' / ' + ar.totalSalesLabel}>
+          <Section
+            title={ar.receiptCountLabel + ' / ' + ar.totalSalesLabel}
+            meta={`${report.sales.receiptCount} ${ar.receiptCountLabel} · ${format(report.sales.totalSales)} ${ar.currency}`}
+          >
             <div className={styles.cards}>
               <SummaryCard label={ar.receiptCountLabel}  value={report.sales.receiptCount} />
               <SummaryCard label={ar.totalSalesLabel}    value={format(report.sales.totalSales)} />
@@ -522,7 +547,7 @@ export default function ReportsScreen() {
           )}
 
           {/* ── By day ── */}
-          <Section title={ar.byDayLabel} defaultOpen={false}>
+          <Section title={ar.byDayLabel} meta={`${byDayRows.length}`} defaultOpen={false}>
             <DataTable
               columns={byDayCols}
               rows={byDayRows}
@@ -530,7 +555,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Sales by type ── */}
-          <Section title={ar.salesByType} defaultOpen={false}>
+          <Section title={ar.salesByType} meta={format(report.sales.totalSales) + ' ' + ar.currency} defaultOpen={false}>
             <div className={styles.cards}>
               {Object.entries(TYPE_LABELS)
                 // Hide takeaway row when there is no legacy data
@@ -542,16 +567,16 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Products ── */}
-          <Section title={ar.bestSelling} defaultOpen={false}>
+          <Section title={ar.bestSelling} meta={`${(report.products.best ?? []).length}`} defaultOpen={false}>
             <DataTable columns={productCols} rows={makeProductRows(report.products.best)} />
           </Section>
 
-          <Section title={ar.worstSelling} defaultOpen={false}>
+          <Section title={ar.worstSelling} meta={`${(report.products.worst ?? []).length}`} defaultOpen={false}>
             <DataTable columns={productCols} rows={makeProductRows(report.products.worst)} />
           </Section>
 
           {/* ── Orders list ── */}
-          <Section title={`${ar.ordersList} (${orderRows.length})`} defaultOpen={false}>
+          <Section title={ar.ordersList} meta={`${orderRows.length} ${ar.receiptCountLabel}`} defaultOpen={false}>
             <DataTable
               columns={orderCols}
               rows={orderRows}
@@ -561,7 +586,8 @@ export default function ReportsScreen() {
 
           {/* ── Cancelled orders ── */}
           <Section
-            title={`${ar.cancelledOrders} ${ar.cancelledNote} (${cancelledRows.length})`}
+            title={ar.cancelledOrders}
+            meta={`${cancelledRows.length} · ${ar.cancelledNote}`}
             defaultOpen={false}
           >
             <DataTable
@@ -572,7 +598,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Shop purchases ── */}
-          <Section title={ar.shopPurchases} defaultOpen={false}>
+          <Section title={ar.shopPurchases} meta={format(report.purchases.totalPurchases) + ' ' + ar.currency} defaultOpen={false}>
             <DataTable
               columns={purchaseCols}
               rows={purchaseTableRows}
@@ -586,7 +612,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Remaining debts ── */}
-          <Section title={ar.remainingDebts} defaultOpen={false}>
+          <Section title={ar.remainingDebts} meta={`${debtTableRows.length}`} defaultOpen={false}>
             <DataTable
               columns={debtCols}
               rows={debtTableRows}
@@ -598,7 +624,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Other expenses ── */}
-          <Section title={ar.totalExpenses} defaultOpen={false}>
+          <Section title={ar.totalExpenses} meta={format(report.expenses.totalExpenses) + ' ' + ar.currency} defaultOpen={false}>
             <DataTable
               columns={expenseCols}
               rows={expenseTableRows}
@@ -611,7 +637,7 @@ export default function ReportsScreen() {
 
           {/* ── Workers pay ── */}
           {report.workersPay?.rows?.length > 0 && (
-            <Section title={ar.workersPaySection} defaultOpen={false}>
+            <Section title={ar.workersPaySection} meta={format(report.workersPay.total) + ' ' + ar.currency} defaultOpen={false}>
               <DataTable
                 columns={workerCols}
                 rows={workerRows}
