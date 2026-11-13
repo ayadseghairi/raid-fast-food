@@ -91,21 +91,62 @@
 }
 
 /* ── Content area ───────────────────────────────────────────────────── */
+/* ROOT CAUSE FIX: was display:flex flex-direction:column which caused all
+   .section children to flex-shrink proportionally into the fixed height,
+   squashing every section. Changed to display:block so children stack at
+   their natural height and the container scrolls when they overflow.    */
 
 .content {
   flex: 1;
-  overflow-y: auto;
-  padding: var(--space-4) var(--space-5);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
   min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Block layout: children stack at natural height, container scrolls */
+  display: block;
+  padding: var(--space-4) var(--space-5);
+  /* Bottom padding so the last section is fully visible above the window edge */
+  padding-bottom: var(--space-16);
+  /* Visible scrollbar — 12px wide, themed */
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border-strong) var(--color-surface);
+}
+
+.content::-webkit-scrollbar {
+  width: 12px;
+}
+.content::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
+}
+.content::-webkit-scrollbar-thumb {
+  background: var(--color-border-strong);
+  border-radius: var(--radius-full);
+  border: 2px solid var(--color-surface);
+}
+.content::-webkit-scrollbar-thumb:hover {
+  background: var(--color-text-muted);
 }
 
 .periodLabel {
-  margin: 0 0 var(--space-2) 0;
+  margin: 0 0 var(--space-3) 0;
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+}
+
+/* ── Toolbar row (expand/collapse + period label) ────────────────────── */
+
+.contentToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+.expandBtns {
+  display: flex;
+  gap: var(--space-2);
 }
 
 /* ── Summary cards ──────────────────────────────────────────────────── */
@@ -158,28 +199,42 @@
 }
 
 /* ── Collapsible section ────────────────────────────────────────────── */
+/* ROOT CAUSE FIX: removed overflow:hidden (was clipping text when flex-
+   shrank); added flex-shrink:0 so sections are never compressed; height
+   is determined by content only.                                         */
 
 .section {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* NO overflow:hidden — clipped headers when flex-shrunk */
+  overflow: visible;
+  /* flex-shrink:0 is irrelevant now (parent is block) but left as a
+     safety rail in case the parent ever becomes a flex container again */
+  flex-shrink: 0;
+  /* Stack sections with margin; block children ignore gap */
+  margin-bottom: var(--space-3);
+  /* Height is always content-driven */
+  height: auto;
 }
 
 .sectionHeader {
   width: 100%;
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* allow multi-line title to push height */
   justify-content: space-between;
   padding: var(--space-3) var(--space-4);
   background: var(--color-surface);
   border: none;
+  border-radius: var(--radius-md);
   cursor: pointer;
   font-family: var(--font-family);
   font-size: var(--font-size-base);
   color: var(--color-text);
   gap: var(--space-3);
-  min-height: 48px;
+  /* At least 56px so text is never clipped (touch target) */
+  min-height: 56px;
   transition: background var(--transition-fast);
+  text-align: right;
 }
 
 .sectionHeader:hover {
@@ -188,9 +243,12 @@
 
 .sectionTitleGroup {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: var(--space-3);
   min-width: 0;
+  flex: 1;
+  /* Allow long titles to wrap rather than overflow */
+  flex-wrap: wrap;
 }
 
 .sectionTitle {
@@ -198,7 +256,9 @@
   font-size: var(--font-size-base);
   border-right: 3px solid var(--color-primary);
   padding-right: var(--space-2);
-  white-space: nowrap;
+  /* Long titles wrap instead of overflowing */
+  white-space: normal;
+  word-break: break-word;
 }
 
 .sectionMeta {
@@ -206,16 +266,20 @@
   color: var(--color-text-muted);
   font-weight: 400;
   white-space: nowrap;
+  align-self: center;
 }
 
 .sectionChevron {
   flex-shrink: 0;
   color: var(--color-text-muted);
+  margin-top: 2px; /* optical alignment with first text line */
 }
 
 .sectionBody {
   padding: var(--space-3) var(--space-4);
   background: var(--color-bg);
+  border-top: 1px solid var(--color-border);
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 
 /* ── DataTable ──────────────────────────────────────────────────────── */
@@ -357,6 +421,10 @@
 .chartWrap {
   flex: 1;
   min-width: 240px;
+  /* Real height so the chart is never a blank strip */
+  height: 280px;
+  display: flex;
+  flex-direction: column;
 }
 
 .chartTitle {
@@ -364,13 +432,26 @@
   font-size: var(--font-size-sm);
   font-weight: 600;
   color: var(--color-text-muted);
+  flex-shrink: 0;
 }
 
 .chart {
+  flex: 1;
   width: 100%;
   height: auto;
   display: block;
   overflow: visible;
+}
+
+.chartEmpty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
 }
 
 /* ── Order detail modal ──────────────────────────────────────────────── */
@@ -428,4 +509,42 @@
 
 .auditTime {
   font-variant-numeric: tabular-nums;
+}
+
+/* ── Floating back-to-top button ────────────────────────────────────── */
+
+.backToTop {
+  position: fixed;
+  /* Positioned relative to the viewport; sits above the content scroll area */
+  bottom: var(--space-6);
+  left: var(--space-6);   /* left = document start in RTL */
+  z-index: 100;
+  height: var(--btn-height-sm);
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  box-shadow: var(--shadow-md);
+  transition: background var(--transition-fast), opacity var(--transition-base);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.backToTop.backToTopVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.backToTop:hover {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
 }

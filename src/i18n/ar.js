@@ -274,6 +274,10 @@ const ar = {
   exportCancelled: 'تم إلغاء الحفظ',
 
   // ── Reports extended ────────────────────────────────────────────
+  expandAll: 'فتح الكل',
+  collapseAll: 'طي الكل',
+  backToTop: 'العودة للأعلى',
+  chartEmpty: 'لا توجد بيانات للرسم البياني',
   byDayLabel: 'حسب اليوم',
   ordersList: 'قائمة الطلبات',
   cancelledOrders: 'الطلبات الملغية',

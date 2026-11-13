@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ar from '../../i18n/ar.js';
 import { reportsGet, reportsExportExcel, reportsExportPdf } from '../../api/index.js';
 import { format, fmtDate, fmtDateTime } from '../../utils/money.js';
@@ -42,8 +42,14 @@ function SummaryCard({ label, value, highlight, sub }) {
   );
 }
 
-function Section({ title, meta, children, defaultOpen = true }) {
+function Section({ title, meta, children, defaultOpen = true, forceOpen }) {
   const [open, setOpen] = useState(defaultOpen);
+
+  // forceOpen lets parent override: true = open all, false = close all
+  useEffect(() => {
+    if (forceOpen !== undefined) setOpen(forceOpen);
+  }, [forceOpen]);
+
   return (
     <div className={styles.section}>
       <button
@@ -124,7 +130,14 @@ function DataTable({ columns, rows, footerRow, onRowClick }) {
 // ── Simple SVG bar chart ──────────────────────────────────────────
 
 function BarChart({ data, title, color = 'var(--accent)' }) {
-  if (!data || data.length === 0) return null;
+  if (!data || data.length === 0) {
+    return (
+      <div className={styles.chartWrap}>
+        <p className={styles.chartTitle}>{title}</p>
+        <div className={styles.chartEmpty}>{ar.chartEmpty}</div>
+      </div>
+    );
+  }
   const W = 560;
   const H = 160;
   const PAD = { top: 10, right: 10, bottom: 40, left: 60 };
@@ -263,13 +276,23 @@ function OrderDetailModal({ order, onClose }) {
 // ── Main screen ───────────────────────────────────────────────────
 
 export default function ReportsScreen() {
-  const [period,   setPeriod]   = useState('day');
-  const [dateFrom, setDateFrom] = useState('');
-  const [dateTo,   setDateTo]   = useState('');
-  const [report,   setReport]   = useState(null);
-  const [loading,  setLoading]  = useState(false);
-  const [toast,    setToast]    = useState(null);
-  const [activeOrder, setActiveOrder] = useState(null);
+  const [period,       setPeriod]       = useState('day');
+  const [dateFrom,     setDateFrom]     = useState('');
+  const [dateTo,       setDateTo]       = useState('');
+  const [report,       setReport]       = useState(null);
+  const [loading,      setLoading]      = useState(false);
+  const [toast,        setToast]        = useState(null);
+  const [activeOrder,  setActiveOrder]  = useState(null);
+  // undefined = uncontrolled (each section owns its own state)
+  const [forceOpen,    setForceOpen]    = useState(undefined);
+  const [showBackTop,  setShowBackTop]  = useState(false);
+  const contentRef = useRef(null);
+
+  // Reset forceOpen after one render cycle so sections own their state again
+  const handleForceOpen = (value) => {
+    setForceOpen(value);
+    setTimeout(() => setForceOpen(undefined), 0);
+  };
 
   const showToast = (msg, type = 'success') => setToast({ msg, type });
 
@@ -505,14 +528,38 @@ export default function ReportsScreen() {
       )}
 
       {report && (
-        <div className={styles.content}>
-          <p className={styles.periodLabel}>
-            {ar.dateFrom}: {fmtDate(report.period.from)} &nbsp;–&nbsp; {ar.dateTo}: {fmtDate(report.period.to)}
-          </p>
+        <div
+          className={styles.content}
+          ref={contentRef}
+          onScroll={e => setShowBackTop(e.currentTarget.scrollTop > 200)}
+        >
+          {/* ── Content toolbar: period label + expand/collapse buttons ── */}
+          <div className={styles.contentToolbar}>
+            <p className={styles.periodLabel} style={{ margin: 0 }}>
+              {ar.dateFrom}: {fmtDate(report.period.from)} &nbsp;–&nbsp; {ar.dateTo}: {fmtDate(report.period.to)}
+            </p>
+            <div className={styles.expandBtns}>
+              <button
+                type="button"
+                className={styles.periodTab}
+                onClick={() => handleForceOpen(true)}
+              >
+                {ar.expandAll}
+              </button>
+              <button
+                type="button"
+                className={styles.periodTab}
+                onClick={() => handleForceOpen(false)}
+              >
+                {ar.collapseAll}
+              </button>
+            </div>
+          </div>
 
           {/* ── Summary cards ── */}
           <Section
             title={ar.receiptCountLabel + ' / ' + ar.totalSalesLabel}
+            forceOpen={forceOpen}
             meta={`${report.sales.receiptCount} ${ar.receiptCountLabel} · ${format(report.sales.totalSales)} ${ar.currency}`}
           >
             <div className={styles.cards}>
@@ -532,7 +579,7 @@ export default function ReportsScreen() {
 
           {/* ── Charts ── */}
           {(salesPerDayData.length > 0 || salesByTypeData.some(d => d.value > 0)) && (
-            <Section title={ar.chartsTitle} defaultOpen={false}>
+            <Section title={ar.chartsTitle} defaultOpen={false} forceOpen={forceOpen}>
               <div className={styles.chartsRow}>
                 {salesPerDayData.length > 0 && (
                   <BarChart data={salesPerDayData} title={ar.chartSalesPerDay} />
@@ -547,7 +594,7 @@ export default function ReportsScreen() {
           )}
 
           {/* ── By day ── */}
-          <Section title={ar.byDayLabel} meta={`${byDayRows.length}`} defaultOpen={false}>
+          <Section title={ar.byDayLabel} meta={`${byDayRows.length}`} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable
               columns={byDayCols}
               rows={byDayRows}
@@ -555,7 +602,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Sales by type ── */}
-          <Section title={ar.salesByType} meta={format(report.sales.totalSales) + ' ' + ar.currency} defaultOpen={false}>
+          <Section title={ar.salesByType} meta={format(report.sales.totalSales) + ' ' + ar.currency} defaultOpen={false} forceOpen={forceOpen}>
             <div className={styles.cards}>
               {Object.entries(TYPE_LABELS)
                 // Hide takeaway row when there is no legacy data
@@ -567,16 +614,16 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Products ── */}
-          <Section title={ar.bestSelling} meta={`${(report.products.best ?? []).length}`} defaultOpen={false}>
+          <Section title={ar.bestSelling} meta={`${(report.products.best ?? []).length}`} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable columns={productCols} rows={makeProductRows(report.products.best)} />
           </Section>
 
-          <Section title={ar.worstSelling} meta={`${(report.products.worst ?? []).length}`} defaultOpen={false}>
+          <Section title={ar.worstSelling} meta={`${(report.products.worst ?? []).length}`} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable columns={productCols} rows={makeProductRows(report.products.worst)} />
           </Section>
 
           {/* ── Orders list ── */}
-          <Section title={ar.ordersList} meta={`${orderRows.length} ${ar.receiptCountLabel}`} defaultOpen={false}>
+          <Section title={ar.ordersList} meta={`${orderRows.length} ${ar.receiptCountLabel}`} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable
               columns={orderCols}
               rows={orderRows}
@@ -589,6 +636,7 @@ export default function ReportsScreen() {
             title={ar.cancelledOrders}
             meta={`${cancelledRows.length} · ${ar.cancelledNote}`}
             defaultOpen={false}
+            forceOpen={forceOpen}
           >
             <DataTable
               columns={orderCols}
@@ -598,7 +646,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Shop purchases ── */}
-          <Section title={ar.shopPurchases} meta={format(report.purchases.totalPurchases) + ' ' + ar.currency} defaultOpen={false}>
+          <Section title={ar.shopPurchases} meta={format(report.purchases.totalPurchases) + ' ' + ar.currency} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable
               columns={purchaseCols}
               rows={purchaseTableRows}
@@ -612,7 +660,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Remaining debts ── */}
-          <Section title={ar.remainingDebts} meta={`${debtTableRows.length}`} defaultOpen={false}>
+          <Section title={ar.remainingDebts} meta={`${debtTableRows.length}`} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable
               columns={debtCols}
               rows={debtTableRows}
@@ -624,7 +672,7 @@ export default function ReportsScreen() {
           </Section>
 
           {/* ── Other expenses ── */}
-          <Section title={ar.totalExpenses} meta={format(report.expenses.totalExpenses) + ' ' + ar.currency} defaultOpen={false}>
+          <Section title={ar.totalExpenses} meta={format(report.expenses.totalExpenses) + ' ' + ar.currency} defaultOpen={false} forceOpen={forceOpen}>
             <DataTable
               columns={expenseCols}
               rows={expenseTableRows}
@@ -637,7 +685,7 @@ export default function ReportsScreen() {
 
           {/* ── Workers pay ── */}
           {report.workersPay?.rows?.length > 0 && (
-            <Section title={ar.workersPaySection} meta={format(report.workersPay.total) + ' ' + ar.currency} defaultOpen={false}>
+            <Section title={ar.workersPaySection} meta={format(report.workersPay.total) + ' ' + ar.currency} defaultOpen={false} forceOpen={forceOpen}>
               <DataTable
                 columns={workerCols}
                 rows={workerRows}
@@ -650,6 +698,16 @@ export default function ReportsScreen() {
           )}
         </div>
       )}
+
+      {/* ── Floating back-to-top button ── */}
+      <button
+        type="button"
+        className={`${styles.backToTop} ${showBackTop ? styles.backToTopVisible : ''}`}
+        onClick={() => contentRef.current?.scrollTo({ top: 0, behavior: 'smooth' })}
+        aria-label={ar.backToTop}
+      >
+        ↑ {ar.backToTop}
+      </button>
     </div>
   );
 }
