@@ -3,6 +3,7 @@ import ar from '../../i18n/ar.js';
 import {
   ordersList, dayGetCurrent,
   ordersModify, ordersCancel,
+  categoriesList, productsList,
 } from '../../api/index.js';
 import { format, toMinor, fromMinor } from '../../utils/money.js';
 import Button from '../../components/Button.jsx';
@@ -40,6 +41,12 @@ export default function OrdersScreen() {
   const [modifyBusy,    setModifyBusy]    = useState(false);
   const [modifyError,   setModifyError]   = useState('');
 
+  // Add-product panel inside modify modal
+  const [addPanelOpen,   setAddPanelOpen]   = useState(false);
+  const [addCategories,  setAddCategories]  = useState([]);
+  const [addActiveCat,   setAddActiveCat]   = useState(null);
+  const [addProducts,    setAddProducts]    = useState([]);
+
   // Cancel confirmation
   const [cancelTarget,  setCancelTarget]  = useState(null);
   const [cancelBusy,    setCancelBusy]    = useState(false);
@@ -74,6 +81,56 @@ export default function OrdersScreen() {
     );
     setModifyFee(fromMinor(order.delivery_fee ?? 0).toString());
     setModifyError('');
+    setAddPanelOpen(false);
+    setAddCategories([]);
+    setAddActiveCat(null);
+    setAddProducts([]);
+  }
+
+  // ── Add-product panel helpers ──────────────────────────────────
+  async function openAddPanel() {
+    setAddPanelOpen(true);
+    if (addCategories.length === 0) {
+      const res = await categoriesList();
+      if (res.ok && res.data.length > 0) {
+        setAddCategories(res.data);
+        loadAddProducts(res.data[0].id);
+        setAddActiveCat(res.data[0].id);
+      }
+    }
+  }
+
+  async function loadAddProducts(catId) {
+    setAddActiveCat(catId);
+    const res = await productsList(catId);
+    if (res.ok) setAddProducts(res.data.filter(p => p.active));
+  }
+
+  function addProductToCart(product) {
+    setModifyCart(prev => {
+      // If already in cart, increment qty
+      const existing = prev.find(i => i.product_id === product.id && (i.options ?? []).length === 0);
+      if (existing) {
+        return prev.map(i => {
+          if (i !== existing) return i;
+          const optExtra = (i.options ?? []).reduce((s, o) => s + (o.price ?? 0), 0);
+          const newQty = i.qty + 1;
+          return { ...i, qty: newQty, line_total: (i.unit_price + optExtra) * newQty };
+        });
+      }
+      // Add new line
+      const newItem = {
+        product_id:   product.id,
+        product_name: product.name,
+        unit_price:   product.price,
+        qty:          1,
+        options:      [],
+        note:         null,
+        line_total:   product.price,
+        _key:         `new_${product.id}_${Date.now()}`,
+      };
+      return [...prev, newItem];
+    });
   }
 
   // ── Modify cart helpers ───────────────────────────────────────
@@ -259,6 +316,42 @@ export default function OrdersScreen() {
       >
         {modifyOrder && (
           <div className={styles.modifyWrap}>
+            {/* Add product panel */}
+            {!addPanelOpen ? (
+              <button className={styles.addProductBtn} onClick={openAddPanel}>
+                <Icon name="plus" size={14} /> {ar.addProduct}
+              </button>
+            ) : (
+              <div className={styles.addPanel}>
+                <div className={styles.addPanelCats}>
+                  {addCategories.map(cat => (
+                    <button
+                      key={cat.id}
+                      className={`${styles.addCatBtn} ${addActiveCat === cat.id ? styles.addCatBtnActive : ''}`}
+                      onClick={() => loadAddProducts(cat.id)}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+                <div className={styles.addPanelProducts}>
+                  {addProducts.map(prod => (
+                    <button
+                      key={prod.id}
+                      className={styles.addProdBtn}
+                      onClick={() => addProductToCart(prod)}
+                    >
+                      <span className={styles.addProdName}>{prod.name}</span>
+                      <span className={styles.addProdPrice}>{format(prod.price)} {ar.currency}</span>
+                    </button>
+                  ))}
+                </div>
+                <button className={styles.closePanelBtn} onClick={() => setAddPanelOpen(false)}>
+                  <Icon name="close" size={13} /> {ar.close}
+                </button>
+              </div>
+            )}
+
             {/* Cart items */}
             <div className={styles.modifyList}>
               {modifyCart.map(item => {
