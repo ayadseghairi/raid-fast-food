@@ -113,13 +113,24 @@ app.on('window-all-closed', () => {
 });
 
 // ── Graceful shutdown ─────────────────────────────────────────────────
-// Checkpoint and close the SQLite DB before the process exits so no WAL
-// data is lost and Windows doesn't complain about locked files on uninstall.
+// 1. WAL checkpoint: flush all pending WAL pages to the main DB file so
+//    the -wal and -shm sidecar files are removed by SQLite on close.
+//    Without this, another process may see a locked or inconsistent DB.
+// 2. closeDb(): close the connection so the file descriptor is released
+//    before the process exits. This is critical on Windows where an open
+//    file handle prevents the next launch from acquiring the DB file.
+// 3. releaseSingleInstanceLock(): explicitly release the lock so the OS
+//    makes it available immediately to the next launch (avoids the
+//    "already running" false-positive on fast restart).
 app.on('before-quit', () => {
   try {
-    const { closeDb } = require('./db/connection.js');
+    const { getDb, closeDb } = require('./db/connection.js');
+    // Force a full WAL checkpoint so -wal/-shm files are removed
+    try { getDb().pragma('wal_checkpoint(TRUNCATE)'); } catch { /* ignore */ }
     closeDb();
   } catch {
-    // If the DB was never opened (e.g. crash before first IPC), ignore.
+    // DB was never opened (crash before first IPC) — nothing to do.
   }
+  // Release the single-instance lock so the next launch isn't blocked
+  app.releaseSingleInstanceLock();
 });
