@@ -13,6 +13,7 @@ import Modal from '../../components/Modal.jsx';
 import ConfirmDialog from '../../components/ConfirmDialog.jsx';
 import FormField from '../../components/FormField.jsx';
 import NumPad from '../../components/NumPad.jsx';
+import CategoryTabs from '../../components/CategoryTabs.jsx';
 import styles from './ProductsScreen.module.css';
 
 export default function ProductsScreen() {
@@ -85,36 +86,28 @@ export default function ProductsScreen() {
       </div>
 
       {/* ── Category tabs ─────────────────────────────────────── */}
-      <div className={styles.tabsRow}>
-        <div className={styles.tabs}>
-          {categories.map(cat => (
-            <button
-              key={cat.id}
-              className={`${styles.tab} ${activeCat === cat.id ? styles.tabActive : ''}`}
-              onClick={() => setActiveCat(cat.id)}
-              onDoubleClick={() => setCatModal({ mode: 'edit', row: cat })}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-        <div className={styles.catActions}>
-          <Button size="sm" variant="ghost" onClick={() => setCatModal({ mode: 'add' })}>
-            + {ar.addCategory}
-          </Button>
-          {activeCat && (
-            <>
-              <Button size="sm" variant="ghost"
-                onClick={() => setCatModal({ mode: 'edit', row: categories.find(c => c.id === activeCat) })}>
-                {ar.edit}
-              </Button>
-              <Button size="sm" variant="danger"
-                onClick={() => setDelCat(categories.find(c => c.id === activeCat))}>
-                {ar.delete}
-              </Button>
-            </>
-          )}
-        </div>
+      <CategoryTabs
+        categories={categories}
+        activeId={activeCat}
+        onChange={setActiveCat}
+      />
+      {/* ── Category actions (edit/delete active category) ──── */}
+      <div className={styles.catActionsBar}>
+        <Button size="sm" variant="ghost" onClick={() => setCatModal({ mode: 'add' })}>
+          + {ar.addCategory}
+        </Button>
+        {activeCat && (
+          <>
+            <Button size="sm" variant="ghost"
+              onClick={() => setCatModal({ mode: 'edit', row: categories.find(c => c.id === activeCat) })}>
+              {ar.edit}
+            </Button>
+            <Button size="sm" variant="danger"
+              onClick={() => setDelCat(categories.find(c => c.id === activeCat))}>
+              {ar.delete}
+            </Button>
+          </>
+        )}
       </div>
 
       {/* ── Product grid ──────────────────────────────────────── */}

@@ -1,38 +1,21 @@
 /* ── CategoryTabs ─────────────────────────────────────────────────
-   Reusable horizontal scrollable tab bar.
-   RTL-first. Touch targets 56 px height total.
+   Wrapping tab bar – no horizontal scroll, no arrows.
+   RTL-first. Touch targets ≥ 44 px height.
+   Used on both POS and Products screens.
    ────────────────────────────────────────────────────────────────── */
 
 .wrapper {
-  position: relative;
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
   background: var(--color-surface);
   border-bottom: 1px solid var(--color-border);
   flex-shrink: 0;
-  /* Keep children from overflowing the wrapper */
+  /* Allow many tabs to scroll vertically as a last resort */
+  max-height: 160px;
+  overflow-y: auto;
   min-width: 0;
-}
-
-/* Scrollable track */
-.track {
-  display: flex;
-  gap: var(--space-2);
-  padding: var(--space-2) var(--space-3);
-  overflow-x: auto;
-  overflow-y: hidden;
-  scroll-behavior: smooth;
-  scrollbar-width: none;
-  flex: 1;
-  min-width: 0;
-  /* Match touch-first height */
-  min-height: 56px;
-  align-items: center;
-  order: 2;
-}
-
-.track::-webkit-scrollbar {
-  display: none;
 }
 
 /* Individual tab button */
@@ -50,9 +33,9 @@
   transition: border-color var(--transition-fast), background var(--transition-fast),
     color var(--transition-fast);
   font-family: var(--font-family);
-  flex-shrink: 0;
   /* Minimum touch width */
   min-width: 56px;
+  /* Touch target height ≥ 44 px is satisfied by height: 40px + wrapper padding */
 }
 
 .tab:hover {
@@ -64,67 +47,4 @@
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: #fff;
-}
-
-/* Arrow scroll buttons */
-.arrow {
-  display: none; /* hidden by default, shown via .arrowVisible */
-  width: 32px;
-  min-width: 32px;
-  height: 56px;
-  align-items: center;
-  justify-content: center;
-  background: var(--color-surface);
-  border: none;
-  color: var(--color-text-muted);
-  cursor: pointer;
-  flex-shrink: 0;
-  z-index: 2;
-  transition: color var(--transition-fast);
-}
-
-.arrow:hover {
-  color: var(--color-text);
-}
-
-.arrowVisible {
-  display: flex;
-}
-
-/* Position adjustments */
-.arrowStart {
-  /* right side in RTL = "earlier" items */
-  order: 3;
-}
-
-.arrowEnd {
-  /* left side in RTL = "later" items */
-  order: 1;
-}
-
-/* Edge fade masks */
-.fade {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 40px;
-  pointer-events: none;
-  z-index: 1;
-  opacity: 0;
-  transition: opacity var(--transition-fast);
-}
-
-.fadeVisible {
-  opacity: 1;
-}
-
-/* RTL: fadeStart is on the right, fadeEnd is on the left */
-.fadeStart {
-  right: 32px; /* next to arrowStart */
-  background: linear-gradient(to left, var(--color-surface), transparent);
-}
-
-.fadeEnd {
-  left: 32px; /* next to arrowEnd */
-  background: linear-gradient(to right, var(--color-surface), transparent);
 }

@@ -22,65 +22,16 @@
   font-weight: 700;
 }
 
-/* ── Category tabs ───────────────────────────────────────────────── */
-/* tabsRow wraps the category scroll area and the action buttons.    */
-/* The tabs themselves use the shared CategoryTabs visual style;     */
-/* here we keep flex-wrap for the actions row.                       */
-.tabsRow {
+/* ── Category actions bar (below shared CategoryTabs) ───────────── */
+.catActionsBar {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: 0 var(--space-4) 0 var(--space-4);
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
   border-bottom: 1px solid var(--color-border);
   background: var(--color-surface);
   flex-shrink: 0;
-  /* Allow tabs to wrap onto second row on wide action bars */
   flex-wrap: wrap;
-  min-width: 0;
-}
-
-/* Inline tab list – wrapping variant for the management screen */
-.tabs {
-  display: flex;
-  gap: var(--space-2);
-  flex-wrap: wrap;
-  flex: 1;
-  min-width: 0;
-  padding: var(--space-2) 0;
-}
-
-/* Visual style matches CategoryTabs.module.css .tab */
-.tab {
-  height: 40px;
-  padding: 0 var(--space-4);
-  border-radius: var(--radius-full);
-  border: 2px solid var(--color-border);
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-  font-family: var(--font-family);
-  white-space: nowrap;
-  min-width: 56px;
-}
-
-.tab:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-}
-
-.tabActive {
-  background: var(--color-primary);
-  border-color: var(--color-primary);
-  color: #fff;
-}
-
-.catActions {
-  display: flex;
-  gap: var(--space-2);
-  flex-shrink: 0;
 }
 
 /* ── Product grid ────────────────────────────────────────────────── */
