@@ -208,15 +208,16 @@ export default function PosScreen() {
     setError('');
 
     const items = cart.map(item => {
-      // Build options array: size option (as snapshot) + extras
+      // Size option stored with price=0 because finalUnitPrice already includes the size price.
+      // Sending the raw sizeOptionPrice here would cause the backend to add it again on top of unit_price.
       const sizeOpt = item.sizeName
-        ? [{ id: item.sizeOptionId, label: item.sizeName, price: item.sizeOptionPrice ?? 0, type: 'size' }]
+        ? [{ id: item.sizeOptionId, label: item.sizeName, price: 0, type: 'size' }]
         : [];
       const extraOpts = item.options.filter(o => o.type !== 'size');
       return {
         product_id: item.product_id,
         product_name: item.product_name + (item.sizeName ? ` — ${item.sizeName}` : ''),
-        unit_price: item.finalUnitPrice,   // FINAL price at time of sale
+        unit_price: item.finalUnitPrice,   // FINAL price at time of sale (already includes size)
         qty: item.qty,
         options: [...sizeOpt, ...extraOpts],
         note: item.note,

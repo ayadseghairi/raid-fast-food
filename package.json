@@ -1,6 +1,6 @@
 {
   "name": "raid-fast-food",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "description": "فاست فود رائد – POS desktop application",
   "main": "electron/main.js",
   "scripts": {
