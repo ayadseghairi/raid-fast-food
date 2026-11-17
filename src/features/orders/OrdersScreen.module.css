@@ -1,3 +1,9 @@
+/* ── OrdersScreen layout ─────────────────────────────────────────────────────
+   The page is a flex column; the list is the ONLY scroll container.
+   The window/page never scrolls. This mirrors the same fix applied to
+   ReportsScreen: flex:1 + min-height:0 + overflow-y:auto on the scroll child.
+── */
+
 .page {
   display: flex;
   flex-direction: column;
@@ -45,21 +51,44 @@
 }
 .emptyIcon { opacity: 0.25; }
 
+/* ── Scroll container ─────────────────────────────────────────────────────────
+   ONE scroll container: takes all remaining height, never lets children shrink
+   it below zero, scrolls vertically, never scrolls horizontally.
+   Styled scrollbar using theme tokens (~12px wide).
+── */
 .list {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;                 /* allow shrinking inside the flex parent     */
+  overflow-y: auto;              /* only this element scrolls, not the page    */
+  overflow-x: hidden;
   padding: var(--space-4);
+  padding-bottom: var(--space-16); /* bottom padding so last row is reachable */
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
 }
 
-/* Order row */
+/* Styled scrollbar — 12px wide, theme colours */
+.list::-webkit-scrollbar        { width: 12px; }
+.list::-webkit-scrollbar-track  { background: var(--color-surface); }
+.list::-webkit-scrollbar-thumb  { background: var(--color-border-strong); border-radius: var(--radius-full); border: 2px solid var(--color-surface); }
+.list::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
+
+/* ── Order row ────────────────────────────────────────────────────────────────
+   flex-shrink:0 — rows never get squashed into each other.
+   height:auto   — the row grows to fit its content (expanded detail etc.).
+   min-height:56px — touch target.
+   overflow:visible — do NOT use overflow:hidden here; it clipped the detail.
+── */
 .row {
   background: var(--color-surface-raised);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* !! overflow must NOT be hidden — it clips the expanded detail panel !! */
+  overflow: visible;
+  flex-shrink: 0;         /* never squash rows into each other              */
+  height: auto;           /* content drives the height                      */
+  min-height: 56px;       /* touch-first minimum                            */
 }
 
 .row.cancelled { opacity: 0.6; }
@@ -69,13 +98,14 @@
   align-items: center;
   justify-content: space-between;
   padding: var(--space-3) var(--space-4);
+  min-height: 56px;
   cursor: pointer;
   user-select: none;
 }
 .rowMain:hover { background: var(--color-surface); }
 
-.rowLeft { display: flex; align-items: center; gap: var(--space-2); }
-.rowRight { display: flex; align-items: center; gap: var(--space-3); }
+.rowLeft { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.rowRight { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
 
 .receiptNum {
   font-size: var(--font-size-lg);
@@ -90,9 +120,9 @@
   padding: 2px 8px;
   border-radius: var(--radius-full);
 }
-.badge_normal { background: var(--color-success-light); color: var(--color-success); }
-.badge_modified { background: var(--color-warning-light); color: var(--color-warning); }
-.badge_cancelled { background: var(--color-danger-light); color: var(--color-danger); }
+.badge_normal    { background: var(--color-success-light); color: var(--color-success); }
+.badge_modified  { background: var(--color-warning-light); color: var(--color-warning); }
+.badge_cancelled { background: var(--color-danger-light);  color: var(--color-danger); }
 
 .typeBadge {
   font-size: var(--font-size-xs);
@@ -122,11 +152,12 @@
   align-items: baseline;
   gap: var(--space-2);
   font-size: var(--font-size-sm);
+  flex-wrap: wrap;
 }
-.detailQty { color: var(--color-text-muted); min-width: 24px; }
-.detailName { flex: 1; }
+.detailQty  { color: var(--color-text-muted); min-width: 24px; flex-shrink: 0; }
+.detailName { flex: 1; min-width: 80px; }
 .detailOpts { color: var(--color-text-muted); font-style: italic; }
-.detailPrice { font-weight: 700; color: var(--color-primary); }
+.detailPrice { font-weight: 700; color: var(--color-primary); flex-shrink: 0; }
 .detailMeta {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
@@ -136,6 +167,7 @@
   margin: var(--space-1) 0 0;
   padding-top: var(--space-2);
   border-top: 1px dashed var(--color-border);
+  flex-wrap: wrap;
 }
 
 /* ── Detail extras ────────────────────────────────────────────────── */
@@ -150,6 +182,34 @@
   border-top: 1px dashed var(--color-border);
   flex-wrap: wrap;
 }
+
+/* ── Back-to-top floating button ──────────────────────────────────── */
+.backToTop {
+  position: fixed;
+  bottom: var(--space-6);
+  left: var(--space-6);            /* LTR position; RTL direction means left = end */
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-full);
+  border: none;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base), background var(--transition-fast);
+  z-index: 10;
+}
+.backToTop.backToTopVisible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.backToTop:hover { background: var(--color-primary-hover); }
 
 /* ── Modify modal ─────────────────────────────────────────────────── */
 .modifyWrap { display: flex; flex-direction: column; gap: var(--space-3); }

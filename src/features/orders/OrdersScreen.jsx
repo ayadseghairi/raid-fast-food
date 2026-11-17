@@ -29,9 +29,11 @@ const TYPE_LABEL = {
 
 // ── OrdersScreen ───────────────────────────────────────────────────
 export default function OrdersScreen() {
-  const [orders,   setOrders]   = useState([]);
-  const [loading,  setLoading]  = useState(true);
-  const [expanded, setExpanded] = useState(null);
+  const [orders,       setOrders]       = useState([]);
+  const [loading,      setLoading]      = useState(true);
+  const [expanded,     setExpanded]     = useState(null);
+  const [showBackTop,  setShowBackTop]  = useState(false);
+  const listRef = React.useRef(null);
 
   // Modify modal state
   const [modifyOrder,   setModifyOrder]   = useState(null); // order being modified
@@ -67,6 +69,14 @@ export default function OrdersScreen() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+
+  // Show back-to-top after scrolling down 200px
+  function handleListScroll(e) {
+    setShowBackTop(e.currentTarget.scrollTop > 200);
+  }
+  function scrollToTop() {
+    listRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }
 
   // ── Open modify modal ─────────────────────────────────────────
   function openModify(order) {
@@ -222,7 +232,11 @@ export default function OrdersScreen() {
           <p>{ar.noData}</p>
         </div>
       ) : (
-        <div className={styles.list}>
+        <div
+          className={styles.list}
+          ref={listRef}
+          onScroll={handleListScroll}
+        >
           {[...orders].reverse().map(order => (
             <div key={order.id} className={`${styles.row} ${styles[order.status]}`}>
               {/* ── Row header ──────────────────────────────── */}
@@ -306,6 +320,15 @@ export default function OrdersScreen() {
           ))}
         </div>
       )}
+
+      {/* ── Back-to-top button ────────────────────────────────────── */}
+      <button
+        className={`${styles.backToTop} ${showBackTop ? styles.backToTopVisible : ''}`}
+        onClick={scrollToTop}
+        aria-label={ar.backToTop}
+      >
+        ↑
+      </button>
 
       {/* ── Modify order modal ──────────────────────────────────── */}
       <Modal
