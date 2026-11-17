@@ -102,7 +102,7 @@ const ar = {
 
   // ── Delivery form ───────────────────────────────────────────────
   customerName: 'اسم العميل',
-  customerPhone: 'رقم الهاتف',
+  customerPhone: 'رقم هاتف العميل',
   customerAddress: 'العنوان',
   newCustomer: 'عميل جديد',
   existingCustomer: 'عميل سابق',
