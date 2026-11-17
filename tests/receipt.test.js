@@ -11,6 +11,7 @@
  *   - No font-weight below 500
  *   - Delivery block present for delivery orders (name, phone, address)
  *   - Delivery block absent for non-delivery orders
+ *   - Phone has direction:ltr and unicode-bidi:isolate
  */
 
 import { describe, it, expect } from 'vitest';
@@ -39,9 +40,11 @@ const ORDER = {
   id:            1,
   number:        42,
   order_type:    'delivery',
-  delivery_name: 'أحمد',
-  delivery_phone:'0551234567',
-  delivery_addr: 'شارع الاستقلال، الجزائر',
+  delivery_name: 'عبد الرحمن بن محمد',
+  // 14-digit phone to verify wrapping safety
+  delivery_phone:'00213551234567890',
+  // ~100-char address to verify multiline wrapping
+  delivery_addr: 'حي النصر، شارع الاستقلال رقم 42، بجانب المسجد الكبير، قرب السوق المركزي، تيارت',
   delivery_fee:  500,    // 5.00 DA
   total:         2500,   // 25.00 DA
   created_at:    '2024-06-15T14:30:00.000Z',
@@ -110,8 +113,7 @@ describe('receipt CSS — thermal safety', () => {
 
   it('customer receipt CSS contains no gray hex colors on text properties', () => {
     const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
-    // Any color: #NNN or color: #NNNNNN where digits are equal (gray) should not appear
-    // We check explicitly for the gray values that were previously in the CSS
+    // Check explicitly for the gray values that must not appear
     const forbidden = ['color:#333', 'color:#555', 'color:#666', 'color:#888', 'color:#aaa', 'color:#444'];
     for (const g of forbidden) {
       expect(css).not.toContain(g);
@@ -120,7 +122,6 @@ describe('receipt CSS — thermal safety', () => {
 
   it('customer receipt CSS has no font-weight below 500', () => {
     const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
-    // font-weight values 100–400 should not appear
     const noComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
     expect(noComments).not.toMatch(/font-weight\s*:\s*(100|200|300|400|normal)\b/);
   });
@@ -129,6 +130,23 @@ describe('receipt CSS — thermal safety', () => {
     const css = extractCss(kitchenReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
     const noComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
     expect(noComments).not.toMatch(/\bopacity\s*:/);
+  });
+
+  it('CSS defines --r-total token (grand total token exists)', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    expect(css).toContain('--r-total:');
+  });
+
+  it('CSS defines --r-dphone token (delivery phone token exists)', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    expect(css).toContain('--r-dphone:');
+  });
+
+  it('58mm CSS has an override block for --r-dphone', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS, widthMm: 58 }));
+    // Should define --r-dphone twice (base 80mm and 58mm override)
+    const count = (css.match(/--r-dphone:/g) ?? []).length;
+    expect(count).toBeGreaterThanOrEqual(2);
   });
 });
 
@@ -205,8 +223,8 @@ describe('customerReceipt', () => {
     expect(build()).toContain('شكراً لزيارتكم');
   });
 
-  it('shows customer delivery info', () => {
-    expect(build()).toContain('أحمد');
+  it('shows customer name in body', () => {
+    expect(build()).toContain('عبد الرحمن');
   });
 
   it('shows modified badge when isModified=true', () => {
@@ -239,38 +257,53 @@ describe('delivery block — present for delivery orders', () => {
 
   it('shows customer name in delivery block', () => {
     expect(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))
-      .toContain('أحمد');
+      .toContain('عبد الرحمن');
   });
 
-  it('shows customer phone in delivery block', () => {
+  it('shows customer phone (long, 14+ digits) in delivery block', () => {
     expect(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))
-      .toContain('0551234567');
+      .toContain('00213551234567890');
   });
 
-  it('shows customer address in delivery block', () => {
+  it('shows customer address (long ~100 chars) in delivery block', () => {
     expect(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))
-      .toContain('شارع الاستقلال');
+      .toContain('السوق المركزي');
   });
 
-  it('delivery block uses delivery-phone-value class for large phone display', () => {
+  it('delivery block uses delivery-phone-value class', () => {
     const html = customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS });
     expect(html).toContain('delivery-phone-value');
+  });
+
+  it('phone has direction:ltr (digits never reorder)', () => {
+    const html = customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS });
+    expect(html).toContain('direction: ltr');
+  });
+
+  it('phone has unicode-bidi:isolate', () => {
+    const css = (() => { const m = html => html.match(/<style>([\s\S]*?)<\/style>/); return m(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))?.[1] ?? ''; })();
+    expect(css).toContain('unicode-bidi: isolate');
+  });
+
+  it('delivery block uses delivery-frame class (compact bordered box)', () => {
+    const html = customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS });
+    const body = html.slice(html.indexOf('<body>'));
+    expect(body).toContain('delivery-frame');
   });
 
   it('delivery block absent for dine_in orders', () => {
     const dineInOrder = { ...ORDER, order_type: 'dine_in', delivery_name: null, delivery_phone: null, delivery_addr: null };
     const html = customerReceipt({ order: dineInOrder, items: ITEMS, settings: SETTINGS });
-    // The CSS comment may contain class names, so check the <body> content only
-    const bodyContent = html.slice(html.indexOf('<body>'));
-    expect(bodyContent).not.toContain('delivery-block');
+    // Check <body> content only (CSS comments may reference class names)
+    const body = html.slice(html.indexOf('<body>'));
+    expect(body).not.toContain('delivery-frame');
   });
 
   it('delivery block absent when order has no delivery fields', () => {
     const noDeliveryOrder = { ...ORDER, order_type: 'delivery', delivery_name: null, delivery_phone: null, delivery_addr: null };
     const html = customerReceipt({ order: noDeliveryOrder, items: ITEMS, settings: SETTINGS });
-    // The CSS comment may contain class names, so check the <body> content only
-    const bodyContent = html.slice(html.indexOf('<body>'));
-    expect(bodyContent).not.toContain('delivery-block');
+    const body = html.slice(html.indexOf('<body>'));
+    expect(body).not.toContain('delivery-frame');
   });
 });
 
@@ -283,16 +316,20 @@ describe('buildDeliveryBlock', () => {
     expect(buildDeliveryBlock({ ...ORDER, delivery_name: null, delivery_phone: null, delivery_addr: null })).toBe('');
   });
 
-  it('contains delivery-block class for delivery order', () => {
-    expect(buildDeliveryBlock(ORDER)).toContain('delivery-block');
+  it('contains delivery-frame class for delivery order', () => {
+    expect(buildDeliveryBlock(ORDER)).toContain('delivery-frame');
   });
 
   it('contains phone in delivery block', () => {
-    expect(buildDeliveryBlock(ORDER)).toContain('0551234567');
+    expect(buildDeliveryBlock(ORDER)).toContain('00213551234567890');
   });
 
   it('contains address in delivery block', () => {
-    expect(buildDeliveryBlock(ORDER)).toContain('شارع الاستقلال');
+    expect(buildDeliveryBlock(ORDER)).toContain('السوق المركزي');
+  });
+
+  it('phone element uses delivery-phone-value class', () => {
+    expect(buildDeliveryBlock(ORDER)).toContain('delivery-phone-value');
   });
 });
 

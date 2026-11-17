@@ -450,22 +450,26 @@ function savePdfToFile({ order, items, widthMm, isModified = false, isCancellati
 function buildTestReceiptHtml({ settings, logoDataUrl, widthMm = 80 }) {
   // Build using the same template functions as real receipts so the test print
   // is a faithful preview of what a customer sees on paper.
+  // Uses a long address (~100 chars), a 14-digit phone, and a long name to
+  // verify that wrapping works correctly at all paper widths.
   const fakeOrder = {
     id:            0,
-    number:        999,
+    number:        11,
     order_type:    'delivery',
-    delivery_name: 'محمد الأمين',
-    delivery_phone:'0551234567',
-    delivery_addr: 'شارع الاستقلال، الحي الجديد، تيارت',
-    delivery_fee:  200,
-    total:         82000,
+    delivery_name: 'عبد الرحمن بن محمد الحسيني',
+    delivery_phone:'00213551234567890',
+    delivery_addr: 'حي النصر، شارع الاستقلال رقم 42، بجانب المسجد الكبير، قرب السوق المركزي، تيارت',
+    delivery_fee:  20000,
+    total:         120000,
     created_at:    new Date().toISOString(),
     status:        'normal',
   };
   const fakeItems = [
-    { product_name: 'بيتزا مشكلة', unit_price: 25000, qty: 1, options: [], note: null, line_total: 25000 },
-    { product_name: 'عصير — 1 L',   unit_price: 15000, qty: 1, options: [{ label: 'برتقال', price: 0 }], note: null, line_total: 15000 },
-    { product_name: 'برغر دجاج',    unit_price: 20000, qty: 2, options: [], note: 'بدون مايونيز', line_total: 40000 },
+    { product_name: 'بيتزا مشكلة بالخضار والجبن الطازج', unit_price: 25000, qty: 1, options: [], note: null, line_total: 25000 },
+    { product_name: 'عصير طازج — 1 L', unit_price: 15000, qty: 1, options: [{ label: 'برتقال مع نعناع', price: 0 }], note: null, line_total: 15000 },
+    { product_name: 'برغر دجاج مقرمش', unit_price: 20000, qty: 2, options: [], note: 'بدون مايونيز، زيادة صلصة حارة', line_total: 40000 },
+    { product_name: 'مشروب غازي',       unit_price: 10000, qty: 1, options: [], note: null, line_total: 10000 },
+    { product_name: 'صلصة إضافية',       unit_price:  5000, qty: 2, options: [], note: null, line_total: 10000 },
   ];
   return tmpl.customerReceipt({
     order:      fakeOrder,
