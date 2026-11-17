@@ -6,6 +6,68 @@ Dates: DD/MM/YYYY. Versions: [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.7] – 17/11/2026
+
+### Changed (تغيير)
+- **إعادة توازن التسلسل الهرمي للفاتورة**: الكتلة كانت ضخمة للغاية (هاتف 28px، اسم/عنوان 20px) مما يأخذ حصة غير متناسبة من الفاتورة بينما الأصناف والإجماليات صغيرة.
+- **نظام CSS Variables للفاتورة**: متغيرات `--r-*` تُعرَّف في أعلى الـ CSS وتتحكم في كل الأحجام دفعةً واحدة. كتلة override لـ 58mm (~0.85×، الهاتف لا يقل عن 18px، النص لا يقل عن 12px).
+- **تصميم كتلة "بيانات التوصيل"**: صندوق مُؤطَّر (1.5px solid #000، border-radius 6px) بدلاً من فاصلَين سميكَين. العنوان 14px bold مع فاصل رفيع أسفله. الصفوف flex-row (التسمية يميناً، القيمة يساراً). فصل 1px solid بين الصفوف. الهاتف `direction:ltr; unicode-bidi:isolate; word-break:break-all`.
+- **الإجمالي الكلي**: 22px weight 800 — أبرز عنصر بعد رقم الطلب.
+- **بيانات الطباعة التجريبية**: عنوان طويل (~100 حرف)، رقم هاتف 14 خانة، اسم طويل للتحقق من التفاف النص على جميع أعراض الورق.
+- **تصحيح تسمية حقل هاتف العميل** في نموذج التوصيل (ar.js).
+
+### Fixed (تصحيح)
+- `check-version.js`: CHANGELOG.md لم يكن يحتوي على إدخالات للإصدارات 1.2.2–1.2.6، مما منع البناء.
+
+### Technical Notes
+- الملفات المُغيَّرة: `electron/utils/receiptTemplate.js`, `electron/services/printing.js`, `tests/receipt.test.js`, `src/i18n/ar.js`.
+- الأحجام النهائية (80mm): brand=18px، num=28px، badge=14px، td=14px، total=22px w800، dvalue=16px، dphone=20px w800.
+
+---
+
+## [1.2.6] – 17/11/2026
+
+### Fixed (تصحيح)
+- **فاتورة التوصيل: نص شاحب/شفاف على الطابعة الحرارية**: جميع الألوان الرمادية (#333، #555، #666، #888، #aaa، #444) أُزيلت من CSS الفاتورة واستُبدلت بـ #000. الطابعات الحرارية تُصيّر كل بكسل غير أسود كنقاط متفرقة → نص شبه شفاف.
+- **كتلة بيانات التوصيل**: كانت `<div class="meta">` بـ 10px رمادي بلا bold — غير مقروءة. أصبحت كتلة منفصلة: اسم 20px bold، هاتف 28px extra-bold tabular-nums، عنوان 20px bold يلتف على عدة أسطر.
+- **وزن الخط**: الحد الأدنى 500 لكل النصوص، 700 للكتلة والإجماليات. `font-synthesis:weight` لمنع تقليد Bold بخط رفيع.
+- **الطباعة التجريبية**: أصبحت تستخدم `customerReceipt()` مع طلب توصيل نموذجي لعرض الكتلة كاملة.
+
+### Added (مضاف)
+- **سجل الطلبات: تصحيح تداخل الصفوف**: `.list` أصبح حاوية التمرير الوحيدة (`flex:1; min-height:0; overflow-y:auto`). `.row` أصبح `flex-shrink:0; height:auto; overflow:visible` (كان `overflow:hidden` يقطع التفاصيل الموسَّعة). زر "العودة للأعلى" عائم.
+- اختبارات CSS بنيوية (`tests/orders_layout.test.js`): `.list` overflow/min-height، `.row` flex-shrink/height، أسماء classes.
+
+---
+
+## [1.2.5] – 16/11/2026
+
+### Added (مضاف)
+- **رواتب العمال في التقارير**: قسم منفصل يعرض مدفوعات العمال اليومية مع الإجماليات.
+- **تصدير Excel محسَّن**: ورقة رواتب العمال مضافة.
+
+---
+
+## [1.2.4] – 15/11/2026
+
+### Fixed (تصحيح)
+- استقرار عام وتحسينات الأداء.
+
+---
+
+## [1.2.3] – 14/11/2026
+
+### Fixed (تصحيح)
+- استقرار عام وتحسينات الأداء.
+
+---
+
+## [1.2.2] – 13/11/2026
+
+### Fixed (تصحيح)
+- استقرار عام وتحسينات الأداء.
+
+---
+
 ## [1.2.1] – 13/11/2026
 
 ### Added (مضاف)
@@ -89,6 +151,12 @@ Dates: DD/MM/YYYY. Versions: [Semantic Versioning](https://semver.org/).
 
 الإصدار الأول من تطبيق "فاست فود رائد" – نقطة بيع مكتبية للويندوز.
 
+[1.2.7]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.6...v1.2.7
+[1.2.6]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.5...v1.2.6
+[1.2.5]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.4...v1.2.5
+[1.2.4]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.3...v1.2.4
+[1.2.3]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.2...v1.2.3
+[1.2.2]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/ayadseghairi/raid-fast-food/compare/v1.0.0...v1.1.0
