@@ -1,16 +1,28 @@
 /**
- * Unit tests for renderReceiptHtml and pageSizeForWidth.
+ * Unit tests for receiptTemplate helpers.
  *
- * These tests run in Node (no Electron) so we import only the pure helpers.
+ * These tests run in Node (no Electron) so we import only the pure template helpers.
  * electron/services/printing.js depends on Electron APIs; we extract just
- * the two functions we can test without mocking Electron.
+ * the functions we can test without mocking Electron.
+ *
+ * Receipt CSS guarantees tested here:
+ *   - No `opacity` declarations in the CSS block
+ *   - No rgba() or gray colors for text
+ *   - No font-weight below 500
+ *   - Delivery block present for delivery orders (name, phone, address)
+ *   - Delivery block absent for non-delivery orders
  */
 
 import { describe, it, expect } from 'vitest';
 
 // ── Import the pure template functions directly ────────────────────
-import { customerReceipt, kitchenReceipt, combinedPdfReceipt, cancellationReceipt }
-  from '../electron/utils/receiptTemplate.js';
+import {
+  customerReceipt,
+  kitchenReceipt,
+  combinedPdfReceipt,
+  cancellationReceipt,
+  buildDeliveryBlock,
+} from '../electron/utils/receiptTemplate.js';
 
 // ── Import pageSizeForWidth via a thin stub ────────────────────────
 // We cannot `require` printing.js because it calls `require('electron')`.
@@ -29,6 +41,7 @@ const ORDER = {
   order_type:    'delivery',
   delivery_name: 'أحمد',
   delivery_phone:'0551234567',
+  delivery_addr: 'شارع الاستقلال، الجزائر',
   delivery_fee:  500,    // 5.00 DA
   total:         2500,   // 25.00 DA
   created_at:    '2024-06-15T14:30:00.000Z',
@@ -68,6 +81,54 @@ describe('pageSizeForWidth', () => {
   it('returns 58mm width in microns for thermal 58mm', () => {
     const size = pageSizeForWidth(58);
     expect(size).toEqual({ width: 58_000, height: 10_000_000 });
+  });
+});
+
+// ── CSS quality guarantees ────────────────────────────────────────
+// The receipt CSS must be safe for thermal printers:
+//   - No opacity (gray dots)
+//   - No rgba() gray colors for text
+//   - No font-weight below 500
+
+describe('receipt CSS — thermal safety', () => {
+  function extractCss(html) {
+    const m = html.match(/<style>([\s\S]*?)<\/style>/);
+    return m ? m[1] : '';
+  }
+
+  it('customer receipt CSS contains no "opacity" declarations', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    // Strip comments first
+    const noComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(noComments).not.toMatch(/\bopacity\s*:/);
+  });
+
+  it('customer receipt CSS contains no rgba() colors', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    expect(css).not.toMatch(/rgba\s*\(/);
+  });
+
+  it('customer receipt CSS contains no gray hex colors on text properties', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    // Any color: #NNN or color: #NNNNNN where digits are equal (gray) should not appear
+    // We check explicitly for the gray values that were previously in the CSS
+    const forbidden = ['color:#333', 'color:#555', 'color:#666', 'color:#888', 'color:#aaa', 'color:#444'];
+    for (const g of forbidden) {
+      expect(css).not.toContain(g);
+    }
+  });
+
+  it('customer receipt CSS has no font-weight below 500', () => {
+    const css = extractCss(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    // font-weight values 100–400 should not appear
+    const noComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(noComments).not.toMatch(/font-weight\s*:\s*(100|200|300|400|normal)\b/);
+  });
+
+  it('kitchen receipt CSS contains no "opacity" declarations', () => {
+    const css = extractCss(kitchenReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }));
+    const noComments = css.replace(/\/\*[\s\S]*?\*\//g, '');
+    expect(noComments).not.toMatch(/\bopacity\s*:/);
   });
 });
 
@@ -168,6 +229,73 @@ describe('customerReceipt', () => {
   });
 });
 
+// ── Delivery block ────────────────────────────────────────────────
+
+describe('delivery block — present for delivery orders', () => {
+  it('contains "بيانات التوصيل" section heading', () => {
+    const html = customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS });
+    expect(html).toContain('بيانات التوصيل');
+  });
+
+  it('shows customer name in delivery block', () => {
+    expect(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))
+      .toContain('أحمد');
+  });
+
+  it('shows customer phone in delivery block', () => {
+    expect(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))
+      .toContain('0551234567');
+  });
+
+  it('shows customer address in delivery block', () => {
+    expect(customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS }))
+      .toContain('شارع الاستقلال');
+  });
+
+  it('delivery block uses delivery-phone-value class for large phone display', () => {
+    const html = customerReceipt({ order: ORDER, items: ITEMS, settings: SETTINGS });
+    expect(html).toContain('delivery-phone-value');
+  });
+
+  it('delivery block absent for dine_in orders', () => {
+    const dineInOrder = { ...ORDER, order_type: 'dine_in', delivery_name: null, delivery_phone: null, delivery_addr: null };
+    const html = customerReceipt({ order: dineInOrder, items: ITEMS, settings: SETTINGS });
+    // The CSS comment may contain class names, so check the <body> content only
+    const bodyContent = html.slice(html.indexOf('<body>'));
+    expect(bodyContent).not.toContain('delivery-block');
+  });
+
+  it('delivery block absent when order has no delivery fields', () => {
+    const noDeliveryOrder = { ...ORDER, order_type: 'delivery', delivery_name: null, delivery_phone: null, delivery_addr: null };
+    const html = customerReceipt({ order: noDeliveryOrder, items: ITEMS, settings: SETTINGS });
+    // The CSS comment may contain class names, so check the <body> content only
+    const bodyContent = html.slice(html.indexOf('<body>'));
+    expect(bodyContent).not.toContain('delivery-block');
+  });
+});
+
+describe('buildDeliveryBlock', () => {
+  it('returns empty string for dine_in', () => {
+    expect(buildDeliveryBlock({ ...ORDER, order_type: 'dine_in' })).toBe('');
+  });
+
+  it('returns empty string when all delivery fields are null', () => {
+    expect(buildDeliveryBlock({ ...ORDER, delivery_name: null, delivery_phone: null, delivery_addr: null })).toBe('');
+  });
+
+  it('contains delivery-block class for delivery order', () => {
+    expect(buildDeliveryBlock(ORDER)).toContain('delivery-block');
+  });
+
+  it('contains phone in delivery block', () => {
+    expect(buildDeliveryBlock(ORDER)).toContain('0551234567');
+  });
+
+  it('contains address in delivery block', () => {
+    expect(buildDeliveryBlock(ORDER)).toContain('شارع الاستقلال');
+  });
+});
+
 // ── kitchenReceipt ────────────────────────────────────────────────
 
 describe('kitchenReceipt', () => {
@@ -205,6 +333,10 @@ describe('kitchenReceipt', () => {
   it('shows modified badge when isModified=true', () => {
     expect(build({ isModified: true })).toContain('طلب معدّل');
   });
+
+  it('shows delivery block for delivery orders', () => {
+    expect(build()).toContain('بيانات التوصيل');
+  });
 });
 
 // ── combinedPdfReceipt ────────────────────────────────────────────
@@ -229,6 +361,12 @@ describe('combinedPdfReceipt', () => {
   it('shows order number twice (once per receipt)', () => {
     const matches = (build().match(/#42/g) ?? []).length;
     expect(matches).toBeGreaterThanOrEqual(2);
+  });
+
+  it('shows delivery block in both sections', () => {
+    const html = build();
+    const count = (html.match(/بيانات التوصيل/g) ?? []).length;
+    expect(count).toBeGreaterThanOrEqual(2);
   });
 });
 

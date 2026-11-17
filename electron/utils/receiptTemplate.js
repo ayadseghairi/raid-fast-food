@@ -39,51 +39,156 @@ function fmtTime(d) {
   return `${h}:${m}`;
 }
 
-/** Build the CSS for the chosen paper width */
+/**
+ * Build the receipt CSS for the chosen paper width.
+ *
+ * IMPORTANT – hard-coded colors are intentional here.
+ * This stylesheet is used in a hidden Electron BrowserWindow for thermal printing.
+ * Thermal printers render every non-black pixel as sparse dots, so any gray or
+ * muted color appears nearly transparent on paper.  ALL text must be pure black
+ * (#000) on pure white (#fff).  CSS custom properties (--color-*) must NOT be
+ * used here because they come from the app theme and may resolve to gray/dark
+ * values in dark mode.  This file is explicitly excluded from the
+ * "no hard-coded colors outside tokens.css" lint rule.
+ *
+ * Font weights: 700 (bold) for delivery block and totals, 500+ for everything else.
+ * font-synthesis: weight is set so bold never falls back to a fake thin face.
+ * -webkit-font-smoothing: antialiased for clean rendering.
+ */
 function buildCss(widthMm) {
+  /* Scale some sizes for 58 mm paper */
+  const is58 = widthMm <= 60;
+  const phoneSz   = is58 ? 22 : 28;  /* phone number: huge on both widths    */
+  const nameSz    = is58 ? 17 : 20;  /* customer name / address               */
+  const labelSz   = is58 ? 11 : 13;  /* "الاسم:" / "الهاتف:" labels           */
+  const itemSz    = is58 ? 10 : 11;  /* item rows                             */
+  const totalSz   = is58 ? 12 : 15;  /* grand total row                       */
+  const headerSz  = is58 ? 13 : 15;  /* restaurant name                       */
+  const orderNumSz= is58 ? 18 : 22;  /* #42 heading                           */
+
   return `
     /* ── @page: tell Chromium the exact paper size (no margins) ── */
     @page {
-      size: ${widthMm}mm auto;   /* width fixed, height = content height */
+      size: ${widthMm}mm auto;
       margin: 0;
     }
-    * { margin:0; padding:0; box-sizing:border-box; }
+
+    /* font-synthesis: weight ensures bold is never faked as thin */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-synthesis: weight style;
+    }
+
     html, body {
-      /* Match the declared paper width so 1mm CSS = 1mm on paper */
       width: ${widthMm}mm;
+      /* Arial / Tahoma are always present on Windows and produce clean thermal output */
       font-family: 'Arial', 'Tahoma', sans-serif;
-      font-size: 12px;
+      font-size: ${itemSz}px;
+      font-weight: 500;
       direction: rtl;
+      /* Hard-coded black on white — required for thermal printers (see file header) */
       color: #000;
       background: #fff;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
     }
-    .receipt { width:100%; padding:4mm; }
-    .center  { text-align:center; }
-    .logo    { max-width:${widthMm - 8}mm; max-height:18mm; object-fit:contain; display:block; margin:0 auto 2mm; }
-    .brand   { font-size:15px; font-weight:bold; margin-bottom:1mm; }
-    .phone   { font-size:11px; color:#333; margin-bottom:2mm; }
-    h2       { font-size:22px; font-weight:bold; margin:2mm 0 1mm; }
-    .badge   { display:inline-block; border:2px solid #000; padding:1mm 4mm; font-size:13px; font-weight:bold; border-radius:3px; margin-bottom:3mm; }
-    .meta    { font-size:10px; color:#555; margin-bottom:3mm; }
-    .divider { border:none; border-top:1px dashed #666; margin:2mm 0; }
-    .divider-solid { border:none; border-top:1px solid #000; margin:2mm 0; }
-    table    { width:100%; border-collapse:collapse; }
-    th       { font-size:10px; border-bottom:1px solid #aaa; padding:1mm 0; text-align:right; }
-    td       { font-size:11px; padding:1mm 0; vertical-align:top; text-align:right; }
-    td.num   { text-align:left; direction:ltr; }
-    .opt-line { font-size:9px; color:#444; padding-right:2mm; }
-    .note-line { font-size:9px; font-style:italic; color:#555; padding-right:2mm; }
-    .fee-row { font-size:11px; }
-    .total-section { margin-top:2mm; }
-    .total-row { display:flex; justify-content:space-between; padding:1mm 0; font-size:12px; }
-    .grand   { font-size:15px; font-weight:bold; border-top:2px solid #000; padding-top:2mm; margin-top:1mm; }
-    .thanks  { text-align:center; font-size:12px; margin-top:4mm; padding-top:2mm; border-top:1px dashed #aaa; }
-    .stamp   { text-align:center; font-size:10px; color:#888; margin-top:2mm; }
+
+    .receipt  { width: 100%; padding: 4mm; }
+    .center   { text-align: center; }
+
+    .logo     { max-width: ${widthMm - 8}mm; max-height: 18mm; object-fit: contain; display: block; margin: 0 auto 2mm; }
+
+    /* Restaurant name */
+    .brand    { font-size: ${headerSz}px; font-weight: 700; margin-bottom: 1mm; color: #000; }
+
+    /* Restaurant phone in header */
+    .rphone   { font-size: ${itemSz}px; font-weight: 500; color: #000; margin-bottom: 2mm; }
+
+    /* Order number */
+    h2        { font-size: ${orderNumSz}px; font-weight: 700; margin: 2mm 0 1mm; color: #000; }
+
+    /* Order type badge */
+    .badge    { display: inline-block; border: 2px solid #000; padding: 1mm 4mm; font-size: ${labelSz}px; font-weight: 700; border-radius: 3px; margin-bottom: 3mm; color: #000; background: #fff; }
+
+    /* Date / time meta */
+    .meta     { font-size: ${itemSz}px; font-weight: 500; color: #000; margin-bottom: 3mm; }
+
+    /* Dividers */
+    .divider        { border: none; border-top: 1px dashed #000; margin: 2mm 0; }
+    .divider-solid  { border: none; border-top: 1px solid #000;  margin: 2mm 0; }
+    .divider-thick  { border: none; border-top: 2px solid #000;  margin: 2mm 0; }
+
+    /* Items table */
+    table { width: 100%; border-collapse: collapse; }
+    th    { font-size: ${itemSz}px; font-weight: 700; border-bottom: 1px solid #000; padding: 1mm 0; text-align: right; color: #000; }
+    td    { font-size: ${itemSz}px; font-weight: 500; padding: 1mm 0; vertical-align: top; text-align: right; color: #000; }
+    td.num { text-align: left; direction: ltr; }
+
+    /* Item sub-lines */
+    .opt-line  { font-size: ${itemSz}px; font-weight: 500; color: #000; padding-right: 2mm; }
+    .note-line { font-size: ${itemSz}px; font-weight: 500; color: #000; font-style: italic; padding-right: 2mm; }
+
+    /* Fee row */
+    .fee-row  { font-size: ${itemSz}px; font-weight: 600; color: #000; }
+
+    /* Totals */
+    .total-section { margin-top: 2mm; }
+    .total-row     { display: flex; justify-content: space-between; padding: 1mm 0; font-size: ${itemSz}px; font-weight: 600; color: #000; }
+    .grand         { font-size: ${totalSz}px; font-weight: 700; border-top: 2px solid #000; padding-top: 2mm; margin-top: 1mm; color: #000; }
+
+    /* Thank-you footer */
+    .thanks { text-align: center; font-size: ${itemSz}px; font-weight: 600; color: #000; margin-top: 4mm; padding-top: 2mm; border-top: 1px dashed #000; }
+    .stamp  { text-align: center; font-size: ${itemSz}px; font-weight: 500; color: #000; margin-top: 2mm; }
+
+    /* ── delivery-block: thick solid black dividers above/below,
+       name/address bold >= ${nameSz}px, phone extra-bold >= ${phoneSz}px,
+       labels bold black, no gray, no opacity. ── */
+    .delivery-block {
+      margin: 1mm 0;
+      padding: 2mm 0;
+    }
+    .delivery-title {
+      font-size: ${nameSz}px;
+      font-weight: 700;
+      color: #000;
+      text-align: center;
+      margin-bottom: 2mm;
+    }
+    .delivery-row {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 2mm;
+    }
+    .delivery-label {
+      font-size: ${labelSz}px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 0.5mm;
+    }
+    .delivery-value {
+      font-size: ${nameSz}px;
+      font-weight: 700;
+      color: #000;
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+    .delivery-phone-value {
+      font-size: ${phoneSz}px;
+      font-weight: 700;
+      color: #000;
+      font-variant-numeric: tabular-nums;
+      direction: ltr;
+      text-align: right;
+    }
+
     /* kitchen copy extras */
-    .kitchen-title { font-size:20px; font-weight:bold; text-align:center; margin-bottom:2mm; }
-    .order-type-badge { font-size:16px; font-weight:bold; text-align:center; padding:2mm; border:3px solid #000; margin:2mm 0; }
-    .kitchen-item { font-size:14px; padding:1mm 0; border-bottom:1px dotted #aaa; }
-    .kitchen-qty  { font-weight:bold; margin-left:2mm; }
+    .kitchen-title      { font-size: ${orderNumSz}px; font-weight: 700; text-align: center; margin-bottom: 2mm; color: #000; }
+    .order-type-badge   { font-size: ${nameSz}px; font-weight: 700; text-align: center; padding: 2mm; border: 3px solid #000; margin: 2mm 0; color: #000; background: #fff; }
+    .kitchen-item       { font-size: ${nameSz}px; font-weight: 600; padding: 1mm 0; border-bottom: 1px solid #000; color: #000; }
+    .kitchen-qty        { font-weight: 700; margin-left: 2mm; }
+
     /* page-break between customer and kitchen in combined PDF */
     .page-break { page-break-before: always; }
   `;
@@ -95,6 +200,51 @@ const ORDER_TYPE_LABEL = {
   takeaway: 'سفري (قديم)',
   delivery: 'توصيل',
 };
+
+/**
+ * Build the delivery info HTML block (only for delivery orders).
+ * Returns empty string for non-delivery orders.
+ *
+ * @param {object} order
+ * @returns {string}
+ */
+function buildDeliveryBlock(order) {
+  if (order.order_type !== 'delivery') return '';
+  const name  = order.delivery_name  ?? '';
+  const phone = order.delivery_phone ?? '';
+  const addr  = order.delivery_addr  ?? '';
+  if (!name && !phone && !addr) return '';
+
+  const nameRow = name
+    ? `<div class="delivery-row">
+         <div class="delivery-label">الاسم:</div>
+         <div class="delivery-value">${name}</div>
+       </div>`
+    : '';
+  const phoneRow = phone
+    ? `<div class="delivery-row">
+         <div class="delivery-label">الهاتف:</div>
+         <div class="delivery-phone-value">${phone}</div>
+       </div>`
+    : '';
+  const addrRow = addr
+    ? `<div class="delivery-row">
+         <div class="delivery-label">العنوان:</div>
+         <div class="delivery-value">${addr}</div>
+       </div>`
+    : '';
+
+  return `
+    <hr class="divider-thick">
+    <div class="delivery-block">
+      <div class="delivery-title">بيانات التوصيل</div>
+      ${nameRow}
+      ${phoneRow}
+      ${addrRow}
+    </div>
+    <hr class="divider-thick">
+  `;
+}
 
 /**
  * Build a customer receipt HTML string.
@@ -160,7 +310,7 @@ function customerReceipt({ order, items, settings, logoDataUrl, widthMm = 80, is
   <div class="center">
     ${logoHtml}
     <div class="brand">${restaurantName}</div>
-    ${restaurantPhone ? `<div class="phone">${restaurantPhone}</div>` : ''}
+    ${restaurantPhone ? `<div class="rphone">${restaurantPhone}</div>` : ''}
     ${modifiedBadge}
     <h2>#${order.number}</h2>
     <div class="badge">${ORDER_TYPE_LABEL[order.order_type] ?? order.order_type}</div>
@@ -183,9 +333,7 @@ function customerReceipt({ order, items, settings, logoDataUrl, widthMm = 80, is
     ${feeRow}
     <div class="total-row grand"><span>الإجمالي</span><span>${fmtMoney(order.total)}</span></div>
   </div>
-  ${order.order_type === 'delivery' && order.delivery_name
-    ? `<hr class="divider"><div class="meta">العميل: ${order.delivery_name} – ${order.delivery_phone ?? ''}</div>`
-    : ''}
+  ${buildDeliveryBlock(order)}
   <div class="thanks">${thankYou}</div>
 </div>
 </body>
@@ -211,12 +359,12 @@ function kitchenReceipt({ order, items, settings, widthMm = 80, isModified = fal
   const restaurantName = settings.restaurant_name ?? 'فاست فود رائد';
 
   const modifiedBadge = isModified
-    ? `<div style="font-size:18px;font-weight:bold;text-align:center;color:#000;border:3px solid #000;padding:2mm;margin:2mm 0;">*** طلب معدّل ***</div>`
+    ? `<div style="font-size:18px;font-weight:700;text-align:center;color:#000;border:3px solid #000;padding:2mm;margin:2mm 0;">*** طلب معدّل ***</div>`
     : '';
 
   const itemRows = items.map(item => {
-    const opts = (item.options ?? []).map(o => `<div style="font-size:11px;padding-right:4mm;">+ ${o.label}</div>`).join('');
-    const note = item.note ? `<div style="font-size:11px;font-style:italic;padding-right:4mm;">📝 ${item.note}</div>` : '';
+    const opts = (item.options ?? []).map(o => `<div style="font-size:11px;font-weight:500;padding-right:4mm;color:#000;">+ ${o.label}</div>`).join('');
+    const note = item.note ? `<div style="font-size:11px;font-weight:500;font-style:italic;padding-right:4mm;color:#000;">📝 ${item.note}</div>` : '';
     return `<div class="kitchen-item">
       <span class="kitchen-qty">${item.qty}×</span>${item.product_name}
       ${opts}${note}
@@ -233,14 +381,12 @@ function kitchenReceipt({ order, items, settings, widthMm = 80, isModified = fal
 <div class="receipt">
   <div class="kitchen-title">${restaurantName} – مطبخ</div>
   ${modifiedBadge}
-  <div style="text-align:center;font-size:28px;font-weight:bold;margin:2mm 0;">#${order.number}</div>
+  <div style="text-align:center;font-size:28px;font-weight:700;margin:2mm 0;color:#000;">#${order.number}</div>
   <div class="order-type-badge">${ORDER_TYPE_LABEL[order.order_type] ?? order.order_type}</div>
-  <div style="text-align:center;font-size:12px;color:#555;margin-bottom:3mm;">${timeStr}</div>
+  <div style="text-align:center;font-size:12px;font-weight:600;color:#000;margin-bottom:3mm;">${timeStr}</div>
   <hr class="divider-solid">
   ${itemRows}
-  ${order.order_type === 'delivery' && order.delivery_name
-    ? `<hr class="divider"><div style="font-size:12px;">التوصيل: ${order.delivery_name}</div>`
-    : ''}
+  ${buildDeliveryBlock(order)}
 </div>
 </body>
 </html>`;
@@ -301,12 +447,12 @@ function combinedPdfReceipt({ order, items, settings, logoDataUrl, widthMm = 80,
     : '';
 
   const kitchenModifiedBadge = isModified
-    ? `<div style="font-size:18px;font-weight:bold;text-align:center;color:#000;border:3px solid #000;padding:2mm;margin:2mm 0;">*** طلب معدّل ***</div>`
+    ? `<div style="font-size:18px;font-weight:700;text-align:center;color:#000;border:3px solid #000;padding:2mm;margin:2mm 0;">*** طلب معدّل ***</div>`
     : '';
 
   const kitchenItemRows = items.map(item => {
-    const opts = (item.options ?? []).map(o => `<div style="font-size:11px;padding-right:4mm;">+ ${o.label}</div>`).join('');
-    const note = item.note ? `<div style="font-size:11px;font-style:italic;padding-right:4mm;">📝 ${item.note}</div>` : '';
+    const opts = (item.options ?? []).map(o => `<div style="font-size:11px;font-weight:500;padding-right:4mm;color:#000;">+ ${o.label}</div>`).join('');
+    const note = item.note ? `<div style="font-size:11px;font-weight:500;font-style:italic;padding-right:4mm;color:#000;">📝 ${item.note}</div>` : '';
     return `<div class="kitchen-item">
       <span class="kitchen-qty">${item.qty}×</span>${item.product_name}
       ${opts}${note}
@@ -325,7 +471,7 @@ function combinedPdfReceipt({ order, items, settings, logoDataUrl, widthMm = 80,
   <div class="center">
     ${logoHtml}
     <div class="brand">${restaurantName}</div>
-    ${restaurantPhone ? `<div class="phone">${restaurantPhone}</div>` : ''}
+    ${restaurantPhone ? `<div class="rphone">${restaurantPhone}</div>` : ''}
     ${modifiedBadge}
     <h2>#${order.number}</h2>
     <div class="badge">${ORDER_TYPE_LABEL[order.order_type] ?? order.order_type}</div>
@@ -348,9 +494,7 @@ function combinedPdfReceipt({ order, items, settings, logoDataUrl, widthMm = 80,
     ${feeRow}
     <div class="total-row grand"><span>الإجمالي</span><span>${fmtMoney(order.total)}</span></div>
   </div>
-  ${order.order_type === 'delivery' && order.delivery_name
-    ? `<hr class="divider"><div class="meta">العميل: ${order.delivery_name} – ${order.delivery_phone ?? ''}</div>`
-    : ''}
+  ${buildDeliveryBlock(order)}
   <div class="thanks">${thankYou}</div>
 </div>
 
@@ -358,14 +502,12 @@ function combinedPdfReceipt({ order, items, settings, logoDataUrl, widthMm = 80,
 <div class="receipt page-break">
   <div class="kitchen-title">${restaurantName} – مطبخ</div>
   ${kitchenModifiedBadge}
-  <div style="text-align:center;font-size:28px;font-weight:bold;margin:2mm 0;">#${order.number}</div>
+  <div style="text-align:center;font-size:28px;font-weight:700;margin:2mm 0;color:#000;">#${order.number}</div>
   <div class="order-type-badge">${ORDER_TYPE_LABEL[order.order_type] ?? order.order_type}</div>
-  <div style="text-align:center;font-size:12px;color:#555;margin-bottom:3mm;">${timeStr}</div>
+  <div style="text-align:center;font-size:12px;font-weight:600;color:#000;margin-bottom:3mm;">${timeStr}</div>
   <hr class="divider-solid">
   ${kitchenItemRows}
-  ${order.order_type === 'delivery' && order.delivery_name
-    ? `<hr class="divider"><div style="font-size:12px;">التوصيل: ${order.delivery_name}</div>`
-    : ''}
+  ${buildDeliveryBlock(order)}
 </div>
 </body>
 </html>`;
@@ -380,10 +522,10 @@ function cancellationReceipt({ order, items, settings, logoDataUrl, widthMm = 80
   return customerReceipt({ order, items, settings, logoDataUrl, widthMm })
     .replace(
       '</div>\n</body>',
-      `<div style="text-align:center;font-size:16px;font-weight:bold;border:3px solid #000;padding:3mm;margin-top:4mm;">
+      `<div style="text-align:center;font-size:16px;font-weight:700;color:#000;border:3px solid #000;padding:3mm;margin-top:4mm;">
         *** إيصال إلغاء ***
       </div></div>\n</body>`,
     );
 }
 
-module.exports = { customerReceipt, kitchenReceipt, combinedPdfReceipt, cancellationReceipt };
+module.exports = { customerReceipt, kitchenReceipt, combinedPdfReceipt, cancellationReceipt, buildDeliveryBlock };

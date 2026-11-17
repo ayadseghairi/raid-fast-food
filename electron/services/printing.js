@@ -448,60 +448,33 @@ function savePdfToFile({ order, items, widthMm, isModified = false, isCancellati
  * @returns {string}
  */
 function buildTestReceiptHtml({ settings, logoDataUrl, widthMm = 80 }) {
-  const name    = settings.restaurant_name  ?? 'فاست فود رائد';
-  const phone   = settings.restaurant_phone ?? '';
-  const thanks  = settings.thank_you_message ?? 'شكراً لزيارتكم';
-  const now     = new Date();
-  const dd      = String(now.getDate()).padStart(2, '0');
-  const mm      = String(now.getMonth() + 1).padStart(2, '0');
-  const yyyy    = now.getFullYear();
-  const hh      = String(now.getHours()).padStart(2, '0');
-  const min     = String(now.getMinutes()).padStart(2, '0');
-  const dateStr = `${dd}/${mm}/${yyyy} ${hh}:${min}`;
-
-  const logoHtml = logoDataUrl
-    ? `<img src="${logoDataUrl}" style="max-width:${widthMm * 0.5}mm;height:auto;display:block;margin:0 auto 4mm auto;" />`
-    : '';
-
-  return `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8">
-<style>
-  @page { size: ${widthMm}mm auto; margin: 0; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    width: ${widthMm}mm;
-    font-family: "Segoe UI", Tahoma, Arial, sans-serif;
-    font-size: 11px;
-    color: #000;
-    direction: rtl;
-    padding: 4mm;
-  }
-  .center { text-align: center; }
-  .bold   { font-weight: bold; }
-  .line   { border-top: 1px dashed #000; margin: 3mm 0; }
-  .row    { display: flex; justify-content: space-between; margin: 1mm 0; }
-</style>
-</head>
-<body>
-  ${logoHtml}
-  <div class="center bold" style="font-size:14px">${name}</div>
-  ${phone ? `<div class="center" style="font-size:10px;direction:ltr">${phone}</div>` : ''}
-  <div class="center" style="font-size:10px;margin-top:2mm">طباعة تجريبية — ${dateStr}</div>
-  <div class="line"></div>
-  <div class="row"><span>فاتورة رقم:</span><span><b>999</b></span></div>
-  <div class="row"><span>النوع:</span><span>محلي</span></div>
-  <div class="line"></div>
-  <div class="row"><span>بيتزا مشكلة</span><span>250.00</span></div>
-  <div class="row"><span>عصير — 1 L</span><span>150.00</span></div>
-  <div class="row"><span>برغر دجاج x2</span><span>400.00</span></div>
-  <div class="line"></div>
-  <div class="row bold"><span>الإجمالي</span><span>800.00 دج</span></div>
-  <div class="line"></div>
-  <div class="center" style="font-size:12px;margin-top:2mm">${thanks}</div>
-</body>
-</html>`;
+  // Build using the same template functions as real receipts so the test print
+  // is a faithful preview of what a customer sees on paper.
+  const fakeOrder = {
+    id:            0,
+    number:        999,
+    order_type:    'delivery',
+    delivery_name: 'محمد الأمين',
+    delivery_phone:'0551234567',
+    delivery_addr: 'شارع الاستقلال، الحي الجديد، تيارت',
+    delivery_fee:  200,
+    total:         82000,
+    created_at:    new Date().toISOString(),
+    status:        'normal',
+  };
+  const fakeItems = [
+    { product_name: 'بيتزا مشكلة', unit_price: 25000, qty: 1, options: [], note: null, line_total: 25000 },
+    { product_name: 'عصير — 1 L',   unit_price: 15000, qty: 1, options: [{ label: 'برتقال', price: 0 }], note: null, line_total: 15000 },
+    { product_name: 'برغر دجاج',    unit_price: 20000, qty: 2, options: [], note: 'بدون مايونيز', line_total: 40000 },
+  ];
+  return tmpl.customerReceipt({
+    order:      fakeOrder,
+    items:      fakeItems,
+    settings,
+    logoDataUrl,
+    widthMm,
+    isModified: false,
+  });
 }
 
 /**
